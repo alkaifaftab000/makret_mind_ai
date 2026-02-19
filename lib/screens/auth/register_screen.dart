@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import 'package:market_mind/constants/app_colors.dart';
+import 'package:market_mind/constants/app_strings.dart';
+import 'package:market_mind/constants/app_text_styles.dart';
 
 class RegisterScreen extends StatelessWidget {
   const RegisterScreen({super.key});
@@ -8,9 +11,12 @@ class RegisterScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F2),
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
@@ -29,36 +35,31 @@ class RegisterScreen extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               Text(
-                'Create Your Account',
+                AppStrings.registerTitle,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1E1E1E),
-                ),
+                style: AppTextStyles.authTitle(isDark),
               ),
               const SizedBox(height: 8),
               Text(
-                'Start generating stories with Market Mind AI.',
+                AppStrings.registerSubtitle,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF5B5B5B),
-                ),
+                style: AppTextStyles.authSubtitle(isDark),
               ),
               const SizedBox(height: 18),
-              const _AuthField(label: 'Email', hint: 'you@example.com'),
+              const _AuthField(
+                label: AppStrings.emailLabel,
+                hint: AppStrings.emailHint,
+              ),
               const SizedBox(height: 12),
               const _AuthField(
-                label: 'Password',
-                hint: '••••••••',
+                label: AppStrings.passwordLabel,
+                hint: AppStrings.passwordHint,
                 obscure: true,
               ),
               const SizedBox(height: 12),
               const _AuthField(
-                label: 'Confirm Password',
-                hint: '••••••••',
+                label: AppStrings.confirmPasswordLabel,
+                hint: AppStrings.passwordHint,
                 obscure: true,
               ),
               const SizedBox(height: 16),
@@ -67,37 +68,30 @@ class RegisterScreen extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF171717),
-                    foregroundColor: const Color(0xFFECECEC),
+                    backgroundColor: AppColors.buttonPrimary,
+                    foregroundColor: AppColors.buttonText,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   child: Text(
-                    'Register',
-                    style: GoogleFonts.poppins(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    AppStrings.register,
+                    style: AppTextStyles.authButton,
                   ),
                 ),
               ),
               const SizedBox(height: 18),
               Row(
                 children: [
-                  const Expanded(child: Divider(color: Color(0xFFB7B7B7))),
+                  const Expanded(child: Divider(color: AppColors.divider)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Text(
-                      'or continue with',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: const Color(0xFF666666),
-                        fontWeight: FontWeight.w500,
-                      ),
+                      AppStrings.orContinue,
+                      style: AppTextStyles.smallMuted(isDark),
                     ),
                   ),
-                  const Expanded(child: Divider(color: Color(0xFFB7B7B7))),
+                  const Expanded(child: Divider(color: AppColors.divider)),
                 ],
               ),
               const SizedBox(height: 16),
@@ -116,20 +110,14 @@ class RegisterScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Already have an account? ',
-                    style: GoogleFonts.poppins(
-                      color: const Color(0xFF4E4E4E),
-                      fontWeight: FontWeight.w500,
-                    ),
+                    AppStrings.alreadyHaveAccount,
+                    style: AppTextStyles.bodyMedium(isDark),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
                     child: Text(
-                      'Sign In',
-                      style: GoogleFonts.poppins(
-                        color: const Color(0xFF1D1D1D),
-                        fontWeight: FontWeight.w700,
-                      ),
+                      AppStrings.signIn,
+                      style: AppTextStyles.bodyStrong(isDark),
                     ),
                   ),
                 ],
@@ -155,26 +143,18 @@ class _AuthField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return TextField(
       obscureText: obscure,
-      style: GoogleFonts.poppins(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: const Color(0xFF1E1E1E),
-      ),
+      style: AppTextStyles.fieldText(isDark),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        labelStyle: GoogleFonts.poppins(
-          color: const Color(0xFF6C6C6C),
-          fontWeight: FontWeight.w500,
-        ),
-        hintStyle: GoogleFonts.poppins(
-          color: const Color(0xFF9A9A9A),
-          fontWeight: FontWeight.w500,
-        ),
+        labelStyle: AppTextStyles.fieldLabel(isDark),
+        hintStyle: AppTextStyles.fieldHint(isDark),
         filled: true,
-        fillColor: const Color(0xFFEAEAEA),
+        fillColor: isDark ? AppColors.darkCard : AppColors.lightCard,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 14,
           vertical: 14,
@@ -195,11 +175,13 @@ class _SocialIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       width: 50,
       height: 50,
       decoration: BoxDecoration(
-        color: const Color(0xFFE3E3E3),
+        color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
         borderRadius: BorderRadius.circular(14),
       ),
       child: IconButton(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import 'package:market_mind/constants/app_colors.dart';
+import 'package:market_mind/constants/app_strings.dart';
+import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/screens/auth/login_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -13,39 +15,6 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
-
-  static const List<_OnboardingItem> _items = [
-    _OnboardingItem(
-      imagePath: 'assets/onboarding/1.png',
-      title: 'Turn Ideas Into Cinematic Clips',
-      description:
-          'Upload visuals, add your prompt, and start creating in seconds.',
-    ),
-    _OnboardingItem(
-      imagePath: 'assets/onboarding/2.png',
-      title: 'Guide Every Scene Clearly',
-      description:
-          'Describe style, mood, and movement to shape the output video.',
-    ),
-    _OnboardingItem(
-      imagePath: 'assets/onboarding/3.png',
-      title: 'Pick The Right AI Model',
-      description:
-          'Select the model that best fits your concept and quality target.',
-    ),
-    _OnboardingItem(
-      imagePath: 'assets/onboarding/4.png',
-      title: 'Generate Faster, Iterate Better',
-      description:
-          'Submit once, preview quickly, and refine prompts with confidence.',
-    ),
-    _OnboardingItem(
-      imagePath: 'assets/onboarding/5.png',
-      title: 'Create Production-Ready Videos',
-      description:
-          'Go from rough concept to polished visual story with Market Mind AI.',
-    ),
-  ];
 
   @override
   void dispose() {
@@ -62,7 +31,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _onNext() {
-    if (_currentIndex < _items.length - 1) {
+    if (_currentIndex < AppStrings.onboardingItems.length - 1) {
       _goToPage(_currentIndex + 1);
       return;
     }
@@ -73,26 +42,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _onSkip() {
-    _goToPage(_items.length - 1);
+    _goToPage(AppStrings.onboardingItems.length - 1);
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F2),
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       body: SafeArea(
         child: PageView.builder(
           controller: _pageController,
-          itemCount: _items.length,
+          itemCount: AppStrings.onboardingItems.length,
           onPageChanged: (index) {
             setState(() {
               _currentIndex = index;
             });
           },
           itemBuilder: (context, index) {
-            final item = _items[index];
+            final item = AppStrings.onboardingItems[index];
             return Padding(
               padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
               child: Column(
@@ -109,21 +81,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Text(
                     item.title,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      color: const Color(0xFF1F1F1F),
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: AppTextStyles.authTitle(
+                      isDark,
+                    ).copyWith(fontSize: 24),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     item.description,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      color: const Color(0xFF4A4A4A),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: AppTextStyles.authSubtitle(isDark),
                   ),
                   const Spacer(),
                   Row(
@@ -134,18 +100,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           child: ElevatedButton(
                             onPressed: _onSkip,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2E2E2E),
-                              foregroundColor: const Color(0xFFE6E6E6),
+                              backgroundColor: AppColors.buttonSecondary,
+                              foregroundColor: AppColors.buttonText,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
                             ),
                             child: Text(
-                              'Skip',
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              AppStrings.onboardingSkip,
+                              style: AppTextStyles.authButton,
                             ),
                           ),
                         ),
@@ -157,20 +120,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           child: ElevatedButton(
                             onPressed: _onNext,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF141414),
-                              foregroundColor: const Color(0xFFEDEDED),
+                              backgroundColor: AppColors.buttonPrimary,
+                              foregroundColor: AppColors.buttonText,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
                             ),
                             child: Text(
-                              _currentIndex == _items.length - 1
-                                  ? 'Done'
-                                  : 'Next',
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              _currentIndex ==
+                                      AppStrings.onboardingItems.length - 1
+                                  ? AppStrings.onboardingDone
+                                  : AppStrings.onboardingNext,
+                              style: AppTextStyles.authButton,
                             ),
                           ),
                         ),
@@ -185,16 +146,4 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
     );
   }
-}
-
-class _OnboardingItem {
-  final String imagePath;
-  final String title;
-  final String description;
-
-  const _OnboardingItem({
-    required this.imagePath,
-    required this.title,
-    required this.description,
-  });
 }

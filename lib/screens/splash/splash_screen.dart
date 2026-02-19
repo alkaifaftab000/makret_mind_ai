@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
+import 'package:market_mind/constants/app_colors.dart';
+import 'package:market_mind/constants/app_strings.dart';
+import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/screens/splash/splash_service.dart';
 import 'package:market_mind/screens/onboarding/onboarding_screen.dart';
 import 'package:market_mind/widgets/custom_curve.dart';
@@ -34,9 +36,12 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.sizeOf(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       body: Stack(
         children: [
           Positioned(
@@ -57,13 +62,9 @@ class _SplashScreenState extends State<SplashScreen> {
             right: 0,
             child: Center(
               child: Text(
-                'Market Mind AI',
+                AppStrings.appName,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  color: Colors.grey.shade800,
-                  fontSize: 50,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: AppTextStyles.splashTitle(isDark),
               ),
             ),
           ),
@@ -73,18 +74,14 @@ class _SplashScreenState extends State<SplashScreen> {
             right: 0,
             child: Center(
               child: DefaultTextStyle(
-                style: GoogleFonts.luckiestGuy(
-                  fontSize: 70.0,
-                  color: Colors.grey.shade800,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTextStyles.splashAnimated(isDark),
                 child: AnimatedTextKit(
                   repeatForever: true,
                   pause: const Duration(seconds: 1),
                   animatedTexts: [
-                    ScaleAnimatedText('Upload'),
-                    ScaleAnimatedText('Prompt'),
-                    ScaleAnimatedText('Generate'),
+                    ScaleAnimatedText(AppStrings.splashWordUpload),
+                    ScaleAnimatedText(AppStrings.splashWordPrompt),
+                    ScaleAnimatedText(AppStrings.splashWordGenerate),
                   ],
                 ),
               ),
@@ -98,12 +95,8 @@ class _SplashScreenState extends State<SplashScreen> {
                 height: screenSize.height * .3,
                 width: screenSize.width,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.black,
-                      Colors.grey.shade800,
-                      Colors.grey.shade600,
-                    ],
+                  gradient: const LinearGradient(
+                    colors: AppColors.splashCurveGradient,
                   ),
                 ),
                 child: Padding(
@@ -119,13 +112,9 @@ class _SplashScreenState extends State<SplashScreen> {
                       ),
                       Center(
                         child: Text(
-                          'From prompts to videos, instantly.',
+                          AppStrings.splashTagline,
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(
-                            fontSize: 20.0,
-                            color: Colors.grey.shade50,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: AppTextStyles.splashTagline(isDark),
                         ),
                       ),
                     ],
@@ -140,13 +129,9 @@ class _SplashScreenState extends State<SplashScreen> {
             right: 0,
             child: Center(
               child: Text(
-                '@2026 Market Mind · v0.1',
+                AppStrings.footer,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  color: Colors.grey.shade500,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: AppTextStyles.footer(isDark),
               ),
             ),
           ),
