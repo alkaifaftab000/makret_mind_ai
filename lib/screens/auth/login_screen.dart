@@ -5,6 +5,7 @@ import 'package:market_mind/constants/app_colors.dart';
 import 'package:market_mind/constants/app_strings.dart';
 import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/screens/auth/register_screen.dart';
+import 'package:market_mind/screens/main_navigation_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -61,7 +62,14 @@ class LoginScreen extends StatelessWidget {
               SizedBox(
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(
+                        builder: (_) => const MainNavigationScreen(),
+                      ),
+                      (route) => false,
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.buttonPrimary,
                     foregroundColor: AppColors.buttonText,
