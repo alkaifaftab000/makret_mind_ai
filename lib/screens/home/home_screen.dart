@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:market_mind/constants/app_colors.dart';
 import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/models/brand_model.dart';
+import 'package:market_mind/screens/brand_details/brand_details_screen.dart';
+import 'package:market_mind/screens/product/product_screen.dart';
 import 'package:market_mind/services/brand_service.dart';
 import 'package:market_mind/utils/app_notification.dart';
 import 'package:market_mind/utils/image_utils.dart';
@@ -208,9 +210,8 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: AppColors.buttonPrimary,
         foregroundColor: AppColors.buttonText,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        icon: const Icon(Icons.add_rounded),
         label: Text(
-          'Create Brand',
+          '✨ Create Brand',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
       ),
@@ -232,9 +233,14 @@ class _BrandCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        // TODO: Navigate to brand details screen
-        // Navigator.push(context, MaterialPageRoute(builder: (_) => BrandDetailsScreen(brand: brand)));
+      onTap: () async {
+        final shouldRefresh = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(builder: (_) => BrandDetailsScreen(brand: brand)),
+        );
+        if (shouldRefresh == true) {
+          onRefresh();
+        }
       },
       child: Container(
         decoration: BoxDecoration(
@@ -260,8 +266,8 @@ class _BrandCard extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
+                    Colors.black.withValues(alpha: 0.1),
                     Colors.black.withValues(alpha: 0.3),
-                    Colors.black.withValues(alpha: 0.6),
                   ],
                 ),
               ),
@@ -300,12 +306,18 @@ class _BrandCard extends StatelessWidget {
                     width: double.infinity,
                     height: 32,
                     child: ElevatedButton(
-                      onPressed: () {
-                        // TODO: Create product action
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ProductScreen(brand: brand),
+                          ),
+                        );
+                        onRefresh();
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.buttonPrimary,
-                        foregroundColor: AppColors.buttonText,
+                        backgroundColor: AppColors.buttonText,
+                        foregroundColor: AppColors.buttonPrimary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),

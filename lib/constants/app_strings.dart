@@ -1,6 +1,6 @@
 class AppStrings {
-  static const String appName = 'Market Mind AI';
-  static const String splashTagline = 'From prompts to videos, instantly.';
+  static const String appName = 'Market Mind AI✨';
+  static const String splashTagline = 'From prompts to market ads, instantly.';
   static const String footer = '@2026 Market Mind · v0.1';
 
   static const String splashWordUpload = 'Upload';

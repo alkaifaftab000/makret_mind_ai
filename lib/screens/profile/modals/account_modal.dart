@@ -1,0 +1,290 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:market_mind/constants/app_colors.dart';
+import 'package:market_mind/utils/app_notification.dart';
+
+class AccountModal extends StatefulWidget {
+  const AccountModal({super.key});
+
+  @override
+  State<AccountModal> createState() => _AccountModalState();
+}
+
+class _AccountModalState extends State<AccountModal> {
+  late TextEditingController _nameController;
+  late TextEditingController _emailController;
+  late TextEditingController _bioController;
+  late TextEditingController _websiteController;
+  bool _isEditing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: 'MarketMind User');
+    _emailController = TextEditingController(text: 'user@example.com');
+    _bioController = TextEditingController(
+      text: 'Content creator focused on brand storytelling.',
+    );
+    _websiteController = TextEditingController(text: 'https://example.com');
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _bioController.dispose();
+    _websiteController.dispose();
+    super.dispose();
+  }
+
+  void _saveProfile() {
+    setState(() => _isEditing = false);
+    AppNotification.success(context, message: 'Profile updated successfully');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Account Details',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimaryLight,
+                  ),
+                ),
+                if (!_isEditing)
+                  GestureDetector(
+                    onTap: () => setState(() => _isEditing = true),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.buttonPrimary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        Icons.edit_rounded,
+                        size: 16,
+                        color: AppColors.buttonPrimary,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            if (_isEditing) ...[
+              _buildFormField(
+                isDark,
+                label: 'Full Name',
+                controller: _nameController,
+                icon: Icons.person_outline_rounded,
+              ),
+              const SizedBox(height: 14),
+              _buildFormField(
+                isDark,
+                label: 'Email Address',
+                controller: _emailController,
+                icon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 14),
+              _buildFormField(
+                isDark,
+                label: 'Bio',
+                controller: _bioController,
+                icon: Icons.description_outlined,
+                maxLines: 3,
+              ),
+              const SizedBox(height: 14),
+              _buildFormField(
+                isDark,
+                label: 'Website',
+                controller: _websiteController,
+                icon: Icons.language_rounded,
+                keyboardType: TextInputType.url,
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => setState(() => _isEditing = false),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppColors.buttonPrimary),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: GoogleFonts.poppins(
+                          color: AppColors.buttonPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _saveProfile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.buttonPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: Text(
+                        'Save',
+                        style: GoogleFonts.poppins(
+                          color: AppColors.buttonText,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ] else ...[
+              _buildInfoRow(isDark, 'Name', _nameController.text),
+              const SizedBox(height: 12),
+              _buildInfoRow(isDark, 'Email', _emailController.text),
+              const SizedBox(height: 12),
+              _buildInfoRow(isDark, 'Bio', _bioController.text),
+              const SizedBox(height: 12),
+              _buildInfoRow(isDark, 'Website', _websiteController.text),
+              const SizedBox(height: 12),
+              _buildInfoRow(isDark, 'Member Since', 'January 2026'),
+              const SizedBox(height: 12),
+              _buildInfoRow(isDark, 'Account Status', 'Active'),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFormField(
+    bool isDark, {
+    required String label,
+    required TextEditingController controller,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isDark
+                ? AppColors.textPrimaryDark
+                : AppColors.textPrimaryLight,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          maxLines: maxLines,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            color: isDark
+                ? AppColors.textPrimaryDark
+                : AppColors.textPrimaryLight,
+          ),
+          decoration: InputDecoration(
+            hintText: 'Enter $label',
+            hintStyle: GoogleFonts.poppins(
+              fontSize: 13,
+              color: isDark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
+            ),
+            prefixIcon: Icon(icon, color: AppColors.buttonPrimary, size: 18),
+            filled: true,
+            fillColor: isDark ? AppColors.darkBackground : Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: AppColors.divider, width: 0.8),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: AppColors.divider, width: 0.8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: AppColors.buttonPrimary,
+                width: 1.2,
+              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow(bool isDark, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkBackground : Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.divider, width: 0.6),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondaryLight,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

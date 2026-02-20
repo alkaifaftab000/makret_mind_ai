@@ -45,19 +45,17 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Stack(
         children: [
           Positioned(
-            top: screenSize.height * .05,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Image.asset(
-                'assets/video/splash.gif',
-                width: screenSize.width * .86,
-                fit: BoxFit.contain,
-              ),
+            top: screenSize.height * .07,
+            left: 10,
+            right: 10,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.asset("assets/video/splash.gif", fit: BoxFit.cover),
             ),
           ),
+
           Positioned(
-            bottom: screenSize.height * .26,
+            bottom: screenSize.height * .23,
             left: 0,
             right: 0,
             child: Center(
@@ -69,7 +67,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
           ),
           Positioned(
-            bottom: screenSize.height * .38,
+            bottom: screenSize.height * .31,
             left: 0,
             right: 0,
             child: Center(
@@ -92,7 +90,7 @@ class _SplashScreenState extends State<SplashScreen> {
             child: ClipPath(
               clipper: SCurveClipper(),
               child: Container(
-                height: screenSize.height * .3,
+                height: screenSize.height * .29,
                 width: screenSize.width,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
@@ -106,16 +104,17 @@ class _SplashScreenState extends State<SplashScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox(height: screenSize.height * .1),
-                      LoadingAnimationWidget.progressiveDots(
-                        color: const Color(0xFFE0E0E0),
-                        size: 60,
-                      ),
                       Center(
                         child: Text(
                           AppStrings.splashTagline,
                           textAlign: TextAlign.center,
                           style: AppTextStyles.splashTagline(isDark),
                         ),
+                      ),
+                      SizedBox(height: screenSize.height * .03),
+                      LoadingAnimationWidget.staggeredDotsWave(
+                        color: const Color(0xFFE0E0E0),
+                        size: 60,
                       ),
                     ],
                   ),
