@@ -13,8 +13,15 @@ import 'package:video_player/video_player.dart';
 
 class ProductGenerationScreen extends StatefulWidget {
   final ProductModel product;
+  final bool startWithFinal;
+  final String? overrideFinalAsset;
 
-  const ProductGenerationScreen({super.key, required this.product});
+  const ProductGenerationScreen({
+    super.key,
+    required this.product,
+    this.startWithFinal = false,
+    this.overrideFinalAsset,
+  });
 
   @override
   State<ProductGenerationScreen> createState() =>
@@ -35,6 +42,8 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
   bool _isFinalReady = false;
   bool _isOpeningClip = false;
   VideoPlayerController? _finalController;
+
+  String get _finalAsset => widget.overrideFinalAsset ?? _dummyFinalAsset;
 
   VideoPlayerController _buildController(String assetPath) {
     return VideoPlayerController.asset(
@@ -63,6 +72,11 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
             '${widget.product.prompt}\n\nEnhanced note: $imageDescription',
       );
     });
+
+    if (widget.startWithFinal) {
+      _isFinalReady = true;
+      _initFinalPreview();
+    }
   }
 
   @override
@@ -227,7 +241,7 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
       Navigator.of(context, rootNavigator: true).pop();
 
       _finalController?.dispose();
-      final controller = _buildController(_dummyFinalAsset);
+      final controller = _buildController(_finalAsset);
       await controller.initialize();
 
       if (!mounted) {
@@ -257,6 +271,27 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
     }
   }
 
+  Future<void> _initFinalPreview() async {
+    try {
+      final controller = _buildController(_finalAsset);
+      await controller.initialize();
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      setState(() {
+        _finalController = controller;
+        _isFinalReady = true;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      AppNotification.error(
+        context,
+        message: 'Unable to load final video preview. Please try again.',
+      );
+    }
+  }
+
   Future<void> _copyLink() async {
     const url = 'https://marketmind.local/final-video/demo';
     await Clipboard.setData(const ClipboardData(text: url));
@@ -266,7 +301,7 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
 
   Future<void> _downloadVideo() async {
     try {
-      final bytes = await rootBundle.load(_dummyFinalAsset);
+      final bytes = await rootBundle.load(_finalAsset);
       final dir = await getApplicationDocumentsDirectory();
       final outDir = Directory('${dir.path}/downloads');
       if (!await outDir.exists()) {
@@ -451,136 +486,213 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Column(
-      children: [
-        Expanded(
-          child: Column(
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          AspectRatio(
+            aspectRatio: controller.value.aspectRatio == 0
+                ? 16 / 9
+                : controller.value.aspectRatio,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: VideoPlayer(controller),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              AspectRatio(
-                aspectRatio: controller.value.aspectRatio == 0
-                    ? 16 / 9
-                    : controller.value.aspectRatio,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: VideoPlayer(controller),
+              IconButton(
+                onPressed: () async {
+                  final target =
+                      controller.value.position - const Duration(seconds: 5);
+                  await controller.seekTo(
+                    target.isNegative ? Duration.zero : target,
+                  );
+                },
+                icon: const Icon(Icons.replay_5_rounded),
+              ),
+              IconButton(
+                onPressed: () {
+                  if (controller.value.isPlaying) {
+                    controller.pause();
+                  } else {
+                    controller.play();
+                  }
+                  setState(() {});
+                },
+                icon: Icon(
+                  controller.value.isPlaying
+                      ? Icons.pause_circle_rounded
+                      : Icons.play_circle_rounded,
+                  size: 34,
                 ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    onPressed: () async {
-                      final target =
-                          controller.value.position -
-                          const Duration(seconds: 5);
-                      await controller.seekTo(
-                        target.isNegative ? Duration.zero : target,
-                      );
-                    },
-                    icon: const Icon(Icons.replay_5_rounded),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      if (controller.value.isPlaying) {
-                        controller.pause();
-                      } else {
-                        controller.play();
-                      }
-                      setState(() {});
-                    },
-                    icon: Icon(
-                      controller.value.isPlaying
-                          ? Icons.pause_circle_rounded
-                          : Icons.play_circle_rounded,
-                      size: 34,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () async {
-                      await controller.seekTo(Duration.zero);
-                      await controller.play();
-                      setState(() {});
-                    },
-                    icon: const Icon(Icons.refresh_rounded),
-                  ),
-                  IconButton(
-                    onPressed: () async {
-                      await controller.seekTo(
-                        controller.value.position + const Duration(seconds: 5),
-                      );
-                    },
-                    icon: const Icon(Icons.forward_5_rounded),
-                  ),
-                ],
+              IconButton(
+                onPressed: () async {
+                  await controller.seekTo(Duration.zero);
+                  await controller.play();
+                  setState(() {});
+                },
+                icon: const Icon(Icons.refresh_rounded),
+              ),
+              IconButton(
+                onPressed: () async {
+                  await controller.seekTo(
+                    controller.value.position + const Duration(seconds: 5),
+                  );
+                },
+                icon: const Icon(Icons.forward_5_rounded),
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _shareVideo,
+                  icon: const Icon(Icons.share_rounded),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppColors.buttonPrimary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    foregroundColor: AppColors.buttonPrimary,
+                  ),
+                  label: Text(
+                    'Share',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _downloadVideo,
+                  icon: const Icon(Icons.download_rounded),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppColors.buttonPrimary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    foregroundColor: AppColors.buttonPrimary,
+                  ),
+                  label: Text(
+                    'Download',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _copyLink,
+                  icon: const Icon(Icons.link_rounded),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppColors.buttonPrimary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    foregroundColor: AppColors.buttonPrimary,
+                  ),
+                  label: Text(
+                    'Copy Link',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildConfigurationSection(isDark),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConfigurationSection(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Video Configuration',
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: isDark
+                ? AppColors.textPrimaryDark
+                : AppColors.textPrimaryLight,
+          ),
         ),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _shareVideo,
-                icon: const Icon(Icons.share_rounded),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.buttonPrimary),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  foregroundColor: AppColors.buttonPrimary,
-                ),
-                label: Text(
-                  'Share',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _downloadVideo,
-                icon: const Icon(Icons.download_rounded),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.buttonPrimary),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  foregroundColor: AppColors.buttonPrimary,
-                ),
-                label: Text(
-                  'Download',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _copyLink,
-                icon: const Icon(Icons.link_rounded),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.buttonPrimary),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  foregroundColor: AppColors.buttonPrimary,
-                ),
-                label: Text(
-                  'Copy Link',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ],
+        const SizedBox(height: 10),
+        _buildConfigItem(isDark, 'Product Name', widget.product.name),
+        const SizedBox(height: 8),
+        _buildConfigItem(isDark, 'Prompt', widget.product.prompt),
+        const SizedBox(height: 8),
+        _buildConfigItem(isDark, 'Tone', widget.product.tone),
+        const SizedBox(height: 8),
+        _buildConfigItem(isDark, 'Model Type', widget.product.modelType),
+        const SizedBox(height: 8),
+        _buildConfigItem(isDark, 'Audio Type', widget.product.audioType),
+        const SizedBox(height: 8),
+        _buildConfigItem(isDark, 'Aspect Ratio', widget.product.aspectRatio),
+        const SizedBox(height: 8),
+        _buildConfigItem(
+          isDark,
+          'Video Length',
+          widget.product.videoLength ?? 'Not specified',
         ),
+        const SizedBox(height: 8),
+        _buildConfigItem(isDark, 'Total Clips', '${_clips.length}'),
       ],
+    );
+  }
+
+  Widget _buildConfigItem(bool isDark, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkBackground : Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.divider, width: 0.6),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondaryLight,
+            ),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
