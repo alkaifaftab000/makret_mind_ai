@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:market_mind/constants/app_colors.dart';
+import 'package:market_mind/constants/app_strings.dart';
+import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/utils/app_notification.dart';
 
 class AboutModal extends StatelessWidget {
@@ -21,18 +23,12 @@ class AboutModal extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'About MarketMind',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimaryLight,
-              ),
+              AppStrings.aboutMarketMind,
+              style: AppTextStyles.sectionTitle(isDark),
             ),
             const SizedBox(height: 4),
             Text(
-              'v1.0.0',
+              AppStrings.appVersion,
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: isDark
@@ -66,7 +62,7 @@ class AboutModal extends StatelessWidget {
 
             // Key Features
             Text(
-              'Key Features',
+              AppStrings.keyFeatures,
               style: GoogleFonts.poppins(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -99,7 +95,7 @@ class AboutModal extends StatelessWidget {
 
             // Technology
             Text(
-              'Technology Stack',
+              AppStrings.technologyStack,
               style: GoogleFonts.poppins(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -121,7 +117,7 @@ class AboutModal extends StatelessWidget {
               onTap: () {
                 AppNotification.info(
                   context,
-                  message: 'GitHub: github.com/alkaifaftab000',
+                  message: 'GitHub: ${AppStrings.githubHandle}',
                 );
               },
               child: Container(
@@ -152,7 +148,7 @@ class AboutModal extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'View on GitHub',
+                            AppStrings.viewOnGithub,
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -162,7 +158,7 @@ class AboutModal extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'github.com/alkaifaftab000',
+                            AppStrings.githubHandle,
                             style: GoogleFonts.poppins(
                               fontSize: 10,
                               color: AppColors.buttonPrimary,
@@ -185,7 +181,7 @@ class AboutModal extends StatelessWidget {
             // Copyright
             Center(
               child: Text(
-                '© 2026 MarketMind. All rights reserved.',
+                AppStrings.copyright,
                 style: GoogleFonts.poppins(
                   fontSize: 10,
                   color: isDark

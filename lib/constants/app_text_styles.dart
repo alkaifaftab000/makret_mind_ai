@@ -7,7 +7,7 @@ class AppTextStyles {
   static TextStyle splashTitle(bool isDark) => GoogleFonts.poppins(
     color: isDark ? AppColors.textPrimaryDark : Colors.grey.shade800,
     fontSize: 50,
-    fontWeight: FontWeight.w500,
+    fontWeight: FontWeight.w900,
   );
 
   static TextStyle splashAnimated(bool isDark) => GoogleFonts.luckiestGuy(
@@ -19,7 +19,7 @@ class AppTextStyles {
   static TextStyle splashTagline(bool isDark) => GoogleFonts.poppins(
     fontSize: 20,
     color: isDark ? AppColors.textPrimaryDark : Colors.grey.shade50,
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w300,
   );
 
   static TextStyle footer(bool isDark) => GoogleFonts.poppins(
@@ -72,6 +72,52 @@ class AppTextStyles {
 
   static TextStyle fieldHint(bool isDark) => GoogleFonts.poppins(
     color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+    fontWeight: FontWeight.w500,
+  );
+
+  static TextStyle screenTitle(bool isDark) => GoogleFonts.poppins(
+    fontSize: 22,
+    fontWeight: FontWeight.w700,
+    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+  );
+
+  static TextStyle pageHeading(bool isDark) => GoogleFonts.poppins(
+    fontSize: 32,
+    fontWeight: FontWeight.w700,
+    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+  );
+
+  static TextStyle sectionTitle(bool isDark) => GoogleFonts.poppins(
+    fontSize: 18,
+    fontWeight: FontWeight.w700,
+    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+  );
+
+  static TextStyle titleMedium(bool isDark) => GoogleFonts.poppins(
+    fontSize: 20,
+    fontWeight: FontWeight.w700,
+    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+  );
+
+  static TextStyle bodySmall(bool isDark) => GoogleFonts.poppins(
+    fontSize: 13,
+    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+  );
+
+  static TextStyle buttonLabel = GoogleFonts.poppins(
+    fontWeight: FontWeight.w600,
+    fontSize: 14,
+  );
+
+  static TextStyle cardTitleOnImage = GoogleFonts.poppins(
+    color: Colors.white,
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+  );
+
+  static TextStyle cardSubtitleOnImage = GoogleFonts.poppins(
+    color: Colors.white,
+    fontSize: 11,
     fontWeight: FontWeight.w500,
   );
 }

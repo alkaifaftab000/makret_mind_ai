@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:market_mind/constants/app_colors.dart';
+import 'package:market_mind/constants/app_strings.dart';
+import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/screens/onboarding/onboarding_screen.dart';
 import 'package:market_mind/utils/app_notification.dart';
 
@@ -28,18 +30,18 @@ class LogoutModal extends StatelessWidget {
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? AppColors.darkCard : Colors.white,
         title: Text(
-          'Confirm Logout',
+          AppStrings.confirmLogout,
           style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
         ),
         content: Text(
-          'Are you sure you want to logout? You can always log back in later.',
+          AppStrings.logoutMessage,
           style: GoogleFonts.poppins(fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Cancel',
+              AppStrings.cancel,
               style: GoogleFonts.poppins(color: AppColors.buttonPrimary),
             ),
           ),
@@ -49,7 +51,7 @@ class LogoutModal extends StatelessWidget {
               _performLogout(context);
             },
             child: Text(
-              'Logout',
+              AppStrings.logout,
               style: GoogleFonts.poppins(
                 color: Colors.red,
                 fontWeight: FontWeight.w600,
@@ -75,16 +77,7 @@ class LogoutModal extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Logout',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimaryLight,
-              ),
-            ),
+            Text(AppStrings.logout, style: AppTextStyles.sectionTitle(isDark)),
             const SizedBox(height: 16),
 
             // Warning Message
@@ -153,7 +146,7 @@ class LogoutModal extends StatelessWidget {
                     const Icon(Icons.logout_rounded, size: 16),
                     const SizedBox(width: 8),
                     Text(
-                      'Logout Now',
+                      AppStrings.logoutNow,
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,

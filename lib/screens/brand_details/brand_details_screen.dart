@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:market_mind/constants/app_colors.dart';
+import 'package:market_mind/constants/app_strings.dart';
+import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/models/brand_model.dart';
 import 'package:market_mind/screens/brand_details/brand_service.dart';
 import 'package:market_mind/utils/app_notification.dart';
@@ -31,7 +33,7 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
       context: context,
       builder: (_) => AlertDialog(
         title: Text(
-          'Delete Brand',
+          AppStrings.deleteBrand,
           style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         content: Text(
@@ -42,7 +44,7 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
-              'Cancel',
+              AppStrings.cancel,
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -53,7 +55,7 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(
-              'Delete',
+              AppStrings.delete,
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -122,7 +124,7 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
             const SizedBox(height: 20),
             _MenuOption(
               icon: Icons.edit_rounded,
-              label: 'Edit Brand',
+              label: AppStrings.editBrand,
               onTap: () async {
                 Navigator.pop(context);
                 await _editBrand();
@@ -130,7 +132,7 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
             ),
             _MenuOption(
               icon: Icons.share_rounded,
-              label: 'Share',
+              label: AppStrings.share,
               onTap: () async {
                 Navigator.pop(context);
                 await _shareBrand();
@@ -138,7 +140,7 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
             ),
             _MenuOption(
               icon: Icons.delete_rounded,
-              label: 'Delete',
+              label: AppStrings.delete,
               isDestructive: true,
               onTap: () {
                 Navigator.pop(context);
@@ -240,7 +242,7 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
                 children: [
                   if (_brand.description != null &&
                       _brand.description!.trim().isNotEmpty) ...[
-                    _SectionTitle('Description'),
+                    _SectionTitle(AppStrings.description),
                     const SizedBox(height: 6),
                     Text(
                       _brand.description!,
@@ -255,31 +257,31 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
                     ),
                     const SizedBox(height: 14),
                   ],
-                  _SectionTitle('Details'),
+                  _SectionTitle(AppStrings.details),
                   const SizedBox(height: 8),
                   _SimpleDetailRow(
-                    heading: 'Category',
+                    heading: AppStrings.category,
                     value: _brand.category?.trim().isNotEmpty == true
                         ? _brand.category!
-                        : 'Not set',
+                        : AppStrings.notSet,
                   ),
                   _SimpleDetailRow(
-                    heading: 'Target Audience',
+                    heading: AppStrings.targetAudience,
                     value: _brand.targetAudience?.trim().isNotEmpty == true
                         ? _brand.targetAudience!
-                        : 'Not set',
+                        : AppStrings.notSet,
                   ),
                   _SimpleDetailRow(
-                    heading: 'Productions',
+                    heading: AppStrings.productions,
                     value:
                         '${_brand.productions} production${_brand.productions == 1 ? '' : 's'}',
                   ),
                   _SimpleDetailRow(
-                    heading: 'Created',
+                    heading: AppStrings.created,
                     value: _formatDate(_brand.createdAt),
                   ),
                   _SimpleDetailRow(
-                    heading: 'Updated',
+                    heading: AppStrings.updated,
                     value: _formatDate(_brand.updatedAt),
                   ),
                   const SizedBox(height: 12),
@@ -297,7 +299,7 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
                             ),
                           ),
                           child: Text(
-                            'Delete',
+                            AppStrings.delete,
                             style: GoogleFonts.poppins(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -321,7 +323,7 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
                             ),
                           ),
                           child: Text(
-                            'Edit',
+                            AppStrings.edit,
                             style: GoogleFonts.poppins(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -348,7 +350,7 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
                             ),
                           ),
                           child: Text(
-                            'Share',
+                            AppStrings.share,
                             style: GoogleFonts.poppins(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -446,14 +448,7 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Text(
-      title,
-      style: GoogleFonts.poppins(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-      ),
-    );
+    return Text(title, style: AppTextStyles.sectionTitle(isDark));
   }
 }
 

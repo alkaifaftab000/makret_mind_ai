@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:market_mind/constants/app_colors.dart';
+import 'package:market_mind/constants/app_strings.dart';
+import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/models/product_model.dart';
 import 'package:market_mind/screens/product/product_generation_screen.dart';
 import 'package:market_mind/utils/search_bar.dart';
@@ -188,14 +190,8 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
             : AppColors.lightBackground,
         elevation: 0,
         title: Text(
-          'Templates',
-          style: GoogleFonts.poppins(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: isDark
-                ? AppColors.textPrimaryDark
-                : AppColors.textPrimaryLight,
-          ),
+          AppStrings.templatesTitle,
+          style: AppTextStyles.screenTitle(isDark),
         ),
       ),
       body: Column(
@@ -206,7 +202,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
             child: AppSearchBar(
               controller: _searchController,
               isDark: isDark,
-              hintText: 'Search templates...',
+              hintText: AppStrings.searchTemplatesHint,
               onChanged: (_) => setState(() {}),
             ),
           ),
@@ -263,7 +259,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
             child: _filtered.isEmpty
                 ? Center(
                     child: Text(
-                      'No templates found',
+                      AppStrings.noTemplatesFound,
                       style: GoogleFonts.poppins(
                         color: isDark
                             ? AppColors.textSecondaryDark
@@ -347,21 +343,15 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                     template.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: AppTextStyles.cardTitleOnImage,
                   ),
                   const SizedBox(height: 3),
                   Text(
                     '${template.category.toUpperCase()} • ${template.config.videoLength} • ${template.config.aspectRatio}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
+                    style: AppTextStyles.cardSubtitleOnImage.copyWith(
                       color: Colors.white.withValues(alpha: 0.9),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],

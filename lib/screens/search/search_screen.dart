@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:market_mind/constants/app_colors.dart';
+import 'package:market_mind/constants/app_strings.dart';
+import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/models/brand_model.dart';
 import 'package:market_mind/models/product_model.dart';
 import 'package:market_mind/screens/brand_details/brand_details_screen.dart';
@@ -111,8 +113,8 @@ class _SearchScreenState extends State<SearchScreen> {
             : AppColors.lightBackground,
         elevation: 0,
         title: Text(
-          'Search',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+          AppStrings.searchTitle,
+          style: AppTextStyles.screenTitle(isDark),
         ),
       ),
       body: SafeArea(
@@ -126,7 +128,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     AppSearchBar(
                       controller: _searchController,
                       isDark: isDark,
-                      hintText: 'Search brands, products, posters...',
+                      hintText: AppStrings.searchAllHint,
                       onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 16),
@@ -138,8 +140,8 @@ class _SearchScreenState extends State<SearchScreen> {
                           padding: const EdgeInsets.only(top: 40),
                           child: Text(
                             _query.isEmpty
-                                ? 'Search to get results'
-                                : 'No results found',
+                                ? AppStrings.searchToGetResults
+                                : AppStrings.noResultsFound,
                             style: GoogleFonts.poppins(
                               color: isDark
                                   ? AppColors.textSecondaryDark
@@ -149,7 +151,10 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                       ),
                     if (_filteredBrands.isNotEmpty) ...[
-                      _SectionHeader(title: 'Brands', isDark: isDark),
+                      _SectionHeader(
+                        title: AppStrings.homeTitle,
+                        isDark: isDark,
+                      ),
                       const SizedBox(height: 10),
                       GridView.builder(
                         shrinkWrap: true,
@@ -170,7 +175,10 @@ class _SearchScreenState extends State<SearchScreen> {
                       const SizedBox(height: 20),
                     ],
                     if (_filteredProducts.isNotEmpty) ...[
-                      _SectionHeader(title: 'Products', isDark: isDark),
+                      _SectionHeader(
+                        title: AppStrings.products,
+                        isDark: isDark,
+                      ),
                       const SizedBox(height: 10),
                       GridView.builder(
                         shrinkWrap: true,
@@ -191,7 +199,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       const SizedBox(height: 20),
                     ],
                     if (_filteredPosters.isNotEmpty) ...[
-                      _SectionHeader(title: 'Posters', isDark: isDark),
+                      _SectionHeader(title: AppStrings.posters, isDark: isDark),
                       const SizedBox(height: 10),
                       GridView.builder(
                         shrinkWrap: true,
@@ -226,14 +234,7 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: GoogleFonts.poppins(
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-      ),
-    );
+    return Text(title, style: AppTextStyles.sectionTitle(isDark));
   }
 }
 

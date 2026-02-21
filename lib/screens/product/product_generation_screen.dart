@@ -4,10 +4,14 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:market_mind/constants/app_colors.dart';
+import 'package:market_mind/constants/app_strings.dart';
+import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/models/product_model.dart';
 import 'package:market_mind/utils/app_notification.dart';
+import 'package:market_mind/utils/permission_utils.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 
@@ -45,9 +49,18 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
 
   String get _finalAsset => widget.overrideFinalAsset ?? _dummyFinalAsset;
 
+  bool _isAssetPath(String path) => path.startsWith('assets/');
+
   VideoPlayerController _buildController(String assetPath) {
-    return VideoPlayerController.asset(
-      assetPath,
+    if (_isAssetPath(assetPath)) {
+      return VideoPlayerController.asset(
+        assetPath,
+        viewType: VideoViewType.textureView,
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      );
+    }
+    return VideoPlayerController.file(
+      File(assetPath),
       viewType: VideoViewType.textureView,
       videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
     );
@@ -201,6 +214,46 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
     AppNotification.success(context, message: 'Short clip regenerated');
   }
 
+  Future<void> _uploadShortClip() async {
+    if (_clips.length >= 5) {
+      AppNotification.warning(
+        context,
+        message: AppStrings.maxShortClipsReached,
+      );
+      return;
+    }
+
+    final hasPermission =
+        await PermissionUtils.requestPhotosPermission() ||
+        await PermissionUtils.requestGalleryPermission();
+
+    if (!hasPermission) {
+      if (!mounted) return;
+      AppNotification.warning(
+        context,
+        message: 'Permission required to access videos',
+      );
+      return;
+    }
+
+    final picker = ImagePicker();
+    final picked = await picker.pickVideo(source: ImageSource.gallery);
+    if (picked == null || !mounted) return;
+
+    setState(() {
+      _clips.add(
+        _GeneratedClip(
+          id: 'clip_upload_${DateTime.now().microsecondsSinceEpoch}',
+          sequence: _clips.length,
+          sourceAsset: picked.path,
+          enhancedDescription: 'User uploaded short clip',
+        ),
+      );
+    });
+
+    AppNotification.success(context, message: AppStrings.shortClipUploaded);
+  }
+
   void _showLoadingDialog(String text) {
     showDialog<void>(
       context: context,
@@ -343,8 +396,10 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
           onPressed: () => Navigator.pop(context, true),
         ),
         title: Text(
-          _isFinalReady ? 'Final Video' : 'Generated Short Clips',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+          _isFinalReady
+              ? AppStrings.finalVideoTitle
+              : AppStrings.generatedShortClipsTitle,
+          style: AppTextStyles.screenTitle(isDark),
         ),
       ),
       body: Padding(
@@ -360,13 +415,8 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
     return Column(
       children: [
         Text(
-          'Review, reorder and regenerate clips before final merge',
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            color: isDark
-                ? AppColors.textSecondaryDark
-                : AppColors.textSecondaryLight,
-          ),
+          AppStrings.reviewClipsHint,
+          style: AppTextStyles.bodySmall(isDark),
         ),
         const SizedBox(height: 10),
         Expanded(
@@ -458,23 +508,45 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
           ),
         ),
         const SizedBox(height: 10),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _isGeneratingFinal ? null : _makeFinalVideo,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.buttonPrimary,
-              foregroundColor: AppColors.buttonText,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _isGeneratingFinal ? null : _uploadShortClip,
+                icon: const Icon(Icons.upload_file_rounded),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: AppColors.buttonPrimary),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  foregroundColor: AppColors.buttonPrimary,
+                ),
+                label: Text(
+                  AppStrings.uploadShortClip,
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                ),
               ),
             ),
-            child: Text(
-              'Make Final Video',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _isGeneratingFinal ? null : _makeFinalVideo,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.buttonPrimary,
+                  foregroundColor: AppColors.buttonText,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  AppStrings.makeFinalVideo,
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ],
     );
@@ -618,76 +690,110 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
   }
 
   Widget _buildConfigurationSection(bool isDark) {
+    final items = [
+      ('Product', widget.product.name),
+      ('Tone', widget.product.tone),
+      ('Model', widget.product.modelType),
+      ('Audio', widget.product.audioType),
+      ('Aspect', widget.product.aspectRatio),
+      ('Length', widget.product.videoLength ?? 'Not specified'),
+      ('Clips', '${_clips.length}'),
+      ('Type', widget.product.type.toUpperCase()),
+      ('Status', 'Final Ready'),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Video Configuration',
           style: GoogleFonts.poppins(
-            fontSize: 14,
+            fontSize: 16,
             fontWeight: FontWeight.w700,
             color: isDark
                 ? AppColors.textPrimaryDark
                 : AppColors.textPrimaryLight,
           ),
         ),
-        const SizedBox(height: 10),
-        _buildConfigItem(isDark, 'Product Name', widget.product.name),
-        const SizedBox(height: 8),
-        _buildConfigItem(isDark, 'Prompt', widget.product.prompt),
-        const SizedBox(height: 8),
-        _buildConfigItem(isDark, 'Tone', widget.product.tone),
-        const SizedBox(height: 8),
-        _buildConfigItem(isDark, 'Model Type', widget.product.modelType),
-        const SizedBox(height: 8),
-        _buildConfigItem(isDark, 'Audio Type', widget.product.audioType),
-        const SizedBox(height: 8),
-        _buildConfigItem(isDark, 'Aspect Ratio', widget.product.aspectRatio),
-        const SizedBox(height: 8),
-        _buildConfigItem(
-          isDark,
-          'Video Length',
-          widget.product.videoLength ?? 'Not specified',
+        const SizedBox(height: 4),
+        Text(
+          'Applied settings for this final render',
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
+          ),
         ),
-        const SizedBox(height: 8),
-        _buildConfigItem(isDark, 'Total Clips', '${_clips.length}'),
+        const SizedBox(height: 10),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: items.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 1.12,
+          ),
+          itemBuilder: (_, index) => _buildConfigTile(
+            isDark,
+            label: items[index].$1,
+            value: items[index].$2,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildConfigItem(bool isDark, String label, String value) {
+  Widget _buildConfigTile(
+    bool isDark, {
+    required String label,
+    required String value,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkBackground : Colors.white,
+        color: isDark ? AppColors.darkCardAlt : AppColors.lightCard,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.divider, width: 0.6),
+        border: Border.all(color: AppColors.divider, width: 0.7),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             label,
             style: GoogleFonts.poppins(
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.w600,
               color: isDark
                   ? AppColors.textSecondaryDark
                   : AppColors.textSecondaryLight,
             ),
           ),
-          Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.poppins(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimaryLight,
+          const SizedBox(height: 4),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
+                ),
               ),
             ),
           ),
@@ -739,9 +845,18 @@ class _ClipPlayerScreenState extends State<_ClipPlayerScreen> {
   bool _isLoading = true;
   String? _error;
 
+  bool _isAssetPath(String path) => path.startsWith('assets/');
+
   VideoPlayerController _buildController(String assetPath) {
-    return VideoPlayerController.asset(
-      assetPath,
+    if (_isAssetPath(assetPath)) {
+      return VideoPlayerController.asset(
+        assetPath,
+        viewType: VideoViewType.textureView,
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      );
+    }
+    return VideoPlayerController.file(
+      File(assetPath),
       viewType: VideoViewType.textureView,
       videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
     );

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:market_mind/constants/app_colors.dart';
+import 'package:market_mind/constants/app_strings.dart';
 import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/models/brand_model.dart';
 import 'package:market_mind/screens/brand_details/brand_details_screen.dart';
@@ -41,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading brands: $e');
+      debugPrint('Error loading brands: $e');
       setState(() {
         _isLoading = false;
       });
@@ -106,21 +107,15 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Brands',
-                style: GoogleFonts.poppins(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  color: isDark
-                      ? AppColors.textPrimaryDark
-                      : AppColors.textPrimaryLight,
-                ),
+                AppStrings.homeTitle,
+                style: AppTextStyles.pageHeading(isDark),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _searchController,
                 style: AppTextStyles.fieldText(isDark),
                 decoration: InputDecoration(
-                  hintText: 'Search brands...',
+                  hintText: AppStrings.searchBrandsHint,
                   hintStyle: AppTextStyles.fieldHint(isDark),
                   prefixIcon: const Icon(Icons.search_rounded),
                   filled: true,
@@ -158,25 +153,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             const SizedBox(height: 20),
                             Text(
-                              'No Brands Yet',
-                              style: GoogleFonts.poppins(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: isDark
-                                    ? AppColors.textPrimaryDark
-                                    : AppColors.textPrimaryLight,
-                              ),
+                              AppStrings.noBrandsYet,
+                              style: AppTextStyles.titleMedium(isDark),
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Create your first brand to get started',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: isDark
-                                    ? AppColors.textMutedDark
-                                    : AppColors.textMutedLight,
-                              ),
+                              AppStrings.noBrandsSubtitle,
+                              style: AppTextStyles.bodySmall(isDark),
                             ),
                           ],
                         ),
@@ -211,7 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
         foregroundColor: AppColors.buttonText,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         label: Text(
-          '✨ Create Brand',
+          AppStrings.createBrand,
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
       ),
@@ -324,7 +307,7 @@ class _BrandCard extends StatelessWidget {
                         padding: EdgeInsets.zero,
                       ),
                       child: Text(
-                        'Create Product',
+                        AppStrings.createProduct,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:market_mind/constants/app_colors.dart';
+import 'package:market_mind/constants/app_strings.dart';
+import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/models/brand_model.dart';
 import 'package:market_mind/models/product_model.dart';
 import 'package:market_mind/screens/product/product_description_screen.dart';
@@ -82,13 +84,7 @@ class _ProductScreenState extends State<ProductScreen> {
         elevation: 0,
         title: Text(
           '${widget.brand.name} Products',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: isDark
-                ? AppColors.textPrimaryDark
-                : AppColors.textPrimaryLight,
-          ),
+          style: AppTextStyles.sectionTitle(isDark),
         ),
       ),
       body: Padding(
@@ -129,7 +125,7 @@ class _ProductScreenState extends State<ProductScreen> {
         backgroundColor: AppColors.buttonPrimary,
         foregroundColor: AppColors.buttonText,
         label: Text(
-          '✨ Create Product',
+          '✨ ${AppStrings.createProduct}',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
       ),
@@ -640,24 +636,60 @@ class _DropdownBlock extends StatelessWidget {
           style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard : AppColors.lightCard,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: value,
-              isExpanded: true,
-              items: items
-                  .map(
-                    (item) => DropdownMenuItem(value: item, child: Text(item)),
-                  )
-                  .toList(),
-              onChanged: onChanged,
-            ),
-          ),
+        Column(
+          children: items.map((item) {
+            final isSelected = item == value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => onChanged(item),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 11,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.buttonPrimary.withValues(alpha: 0.14)
+                        : (isDark ? AppColors.darkCard : AppColors.lightCard),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.buttonPrimary
+                          : AppColors.divider,
+                      width: isSelected ? 1.2 : 0.7,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w500,
+                            color: isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimaryLight,
+                          ),
+                        ),
+                      ),
+                      if (isSelected)
+                        Icon(
+                          Icons.check_circle_rounded,
+                          size: 18,
+                          color: AppColors.buttonPrimary,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
@@ -788,25 +820,13 @@ class _EmptyProductsState extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            'No Products Yet',
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: isDark
-                  ? AppColors.textPrimaryDark
-                  : AppColors.textPrimaryLight,
-            ),
+            AppStrings.noProductsYet,
+            style: AppTextStyles.titleMedium(isDark),
           ),
           const SizedBox(height: 8),
           Text(
-            'Create your first product for this brand',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: isDark
-                  ? AppColors.textMutedDark
-                  : AppColors.textMutedLight,
-            ),
+            AppStrings.noProductsSubtitle,
+            style: AppTextStyles.bodySmall(isDark),
           ),
         ],
       ),

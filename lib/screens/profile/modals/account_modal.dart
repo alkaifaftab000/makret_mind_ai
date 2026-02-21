@@ -1,7 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:market_mind/constants/app_colors.dart';
 import 'package:market_mind/utils/app_notification.dart';
+import 'package:market_mind/utils/image_utils.dart';
+import 'package:market_mind/utils/permission_utils.dart';
+import 'package:image_picker/image_picker.dart';
 
 class AccountModal extends StatefulWidget {
   const AccountModal({super.key});
@@ -15,6 +20,7 @@ class _AccountModalState extends State<AccountModal> {
   late TextEditingController _emailController;
   late TextEditingController _bioController;
   late TextEditingController _websiteController;
+  String? _profileImagePath;
   bool _isEditing = false;
 
   @override
@@ -40,6 +46,67 @@ class _AccountModalState extends State<AccountModal> {
   void _saveProfile() {
     setState(() => _isEditing = false);
     AppNotification.success(context, message: 'Profile updated successfully');
+  }
+
+  Future<void> _changeProfilePhoto() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_library_rounded),
+                  title: Text(
+                    'Choose from Gallery',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
+                  onTap: () => Navigator.pop(context, ImageSource.gallery),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_camera_rounded),
+                  title: Text(
+                    'Take a Photo',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
+                  onTap: () => Navigator.pop(context, ImageSource.camera),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (source == null) return;
+
+    final granted = source == ImageSource.camera
+        ? await PermissionUtils.requestCameraPermission()
+        : await PermissionUtils.requestPhotosPermission() ||
+              await PermissionUtils.requestGalleryPermission();
+
+    if (!granted) {
+      if (!mounted) return;
+      AppNotification.warning(
+        context,
+        message: 'Permission required to update profile photo',
+      );
+      return;
+    }
+
+    final imagePath = await ImageUtils.pickImage(source: source);
+    if (imagePath == null || !mounted) return;
+
+    setState(() {
+      _profileImagePath = imagePath;
+    });
+    AppNotification.success(context, message: 'Profile photo updated');
   }
 
   @override
@@ -89,6 +156,72 @@ class _AccountModalState extends State<AccountModal> {
               ],
             ),
             const SizedBox(height: 20),
+
+            Center(
+              child: Column(
+                children: [
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 44,
+                        backgroundColor: isDark
+                            ? AppColors.darkBackground
+                            : AppColors.lightCard,
+                        backgroundImage: _profileImagePath != null
+                            ? FileImage(File(_profileImagePath!))
+                            : null,
+                        child: _profileImagePath == null
+                            ? Icon(
+                                Icons.person_rounded,
+                                size: 42,
+                                color: AppColors.buttonPrimary,
+                              )
+                            : null,
+                      ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: InkWell(
+                          onTap: _changeProfilePhoto,
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: AppColors.buttonPrimary,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDark
+                                    ? AppColors.darkCard
+                                    : Colors.white,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt_rounded,
+                              size: 14,
+                              color: AppColors.buttonText,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: _changeProfilePhoto,
+                    child: Text(
+                      'Change Profile Photo',
+                      style: GoogleFonts.poppins(
+                        color: AppColors.buttonPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
 
             if (_isEditing) ...[
               _buildFormField(

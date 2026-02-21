@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:market_mind/constants/app_colors.dart';
+import 'package:market_mind/constants/app_strings.dart';
+import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/services/brand_service.dart';
 import 'package:market_mind/services/product_service.dart';
 import 'package:market_mind/screens/profile/modals/account_modal.dart';
@@ -93,14 +95,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             : AppColors.lightBackground,
         elevation: 0,
         title: Text(
-          'Profile',
-          style: GoogleFonts.poppins(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: isDark
-                ? AppColors.textPrimaryDark
-                : AppColors.textPrimaryLight,
-          ),
+          AppStrings.profileTitle,
+          style: AppTextStyles.screenTitle(isDark),
         ),
       ),
       body: FutureBuilder<Map<String, dynamic>>(
@@ -114,7 +110,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             return Center(
               child: Text(
                 'Unable to load profile',
-                style: GoogleFonts.poppins(),
+                style: AppTextStyles.bodyMedium(isDark),
               ),
             );
           }
@@ -160,24 +156,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 // Name and Profession
                 Text(
-                  'MarketMind User',
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimaryLight,
-                  ),
+                  AppStrings.marketMindUser,
+                  style: AppTextStyles.titleMedium(isDark),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Content Creator',
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
-                  ),
+                  AppStrings.contentCreator,
+                  style: AppTextStyles.bodySmall(isDark),
                 ),
                 const SizedBox(height: 28),
 
@@ -189,7 +174,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         isDark,
                         icon: Icons.video_library_rounded,
                         count: totalProducts.toString(),
-                        label: 'Videos',
+                        label: AppStrings.videos,
                         color: Colors.blue,
                       ),
                     ),
@@ -199,7 +184,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         isDark,
                         icon: Icons.shopping_bag_rounded,
                         count: totalBrands.toString(),
-                        label: 'Products',
+                        label: AppStrings.products,
                         color: Colors.green,
                       ),
                     ),
@@ -209,7 +194,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         isDark,
                         icon: Icons.image_rounded,
                         count: totalPosters.toString(),
-                        label: 'Posters',
+                        label: AppStrings.posters,
                         color: Colors.orange,
                       ),
                     ),
@@ -236,7 +221,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const Icon(Icons.person_outline_rounded, size: 18),
                         const SizedBox(width: 8),
                         Text(
-                          'Account Details',
+                          AppStrings.accountDetails,
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
@@ -266,7 +251,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const Icon(Icons.settings_rounded, size: 18),
                         const SizedBox(width: 8),
                         Text(
-                          'Settings',
+                          AppStrings.settings,
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
@@ -296,7 +281,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const Icon(Icons.info_outline_rounded, size: 18),
                         const SizedBox(width: 8),
                         Text(
-                          'About',
+                          AppStrings.about,
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
@@ -326,7 +311,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const Icon(Icons.logout_rounded, size: 18),
                         const SizedBox(width: 8),
                         Text(
-                          'Logout',
+                          AppStrings.logout,
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,

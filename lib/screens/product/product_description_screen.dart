@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:market_mind/constants/app_colors.dart';
+import 'package:market_mind/constants/app_strings.dart';
+import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/models/product_model.dart';
 import 'package:market_mind/screens/product/product_generation_screen.dart';
 import 'package:market_mind/services/product_service.dart';
@@ -108,7 +110,7 @@ class _ProductDescriptionScreenState extends State<ProductDescriptionScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel', style: GoogleFonts.poppins()),
+            child: Text(AppStrings.cancel, style: GoogleFonts.poppins()),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -257,13 +259,7 @@ class _ProductDescriptionScreenState extends State<ProductDescriptionScreen> {
         elevation: 0,
         title: Text(
           'Product Description',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: isDark
-                ? AppColors.textPrimaryDark
-                : AppColors.textPrimaryLight,
-          ),
+          style: AppTextStyles.sectionTitle(isDark),
         ),
       ),
       body: SingleChildScrollView(
@@ -561,24 +557,60 @@ class _DropdownBlock extends StatelessWidget {
           style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard : AppColors.lightCard,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: value,
-              isExpanded: true,
-              items: items
-                  .map(
-                    (item) => DropdownMenuItem(value: item, child: Text(item)),
-                  )
-                  .toList(),
-              onChanged: onChanged,
-            ),
-          ),
+        Column(
+          children: items.map((item) {
+            final isSelected = item == value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => onChanged(item),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 11,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.buttonPrimary.withValues(alpha: 0.14)
+                        : (isDark ? AppColors.darkCard : AppColors.lightCard),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.buttonPrimary
+                          : AppColors.divider,
+                      width: isSelected ? 1.2 : 0.7,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w500,
+                            color: isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimaryLight,
+                          ),
+                        ),
+                      ),
+                      if (isSelected)
+                        Icon(
+                          Icons.check_circle_rounded,
+                          size: 18,
+                          color: AppColors.buttonPrimary,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );

@@ -29,6 +29,91 @@ class AppStrings {
   static const String noAccount = 'No account yet? ';
   static const String alreadyHaveAccount = 'Already have an account? ';
 
+  static const String homeTitle = 'Brands';
+  static const String searchTitle = 'Search';
+  static const String templatesTitle = 'Templates';
+  static const String profileTitle = 'Profile';
+
+  static const String searchBrandsHint = 'Search brands...';
+  static const String searchAllHint = 'Search brands, products, posters...';
+  static const String searchTemplatesHint = 'Search templates...';
+  static const String searchToGetResults = 'Search to get results';
+  static const String noResultsFound = 'No results found';
+  static const String noTemplatesFound = 'No templates found';
+
+  static const String noBrandsYet = 'No Brands Yet';
+  static const String noBrandsSubtitle =
+      'Create your first brand to get started';
+  static const String noProductsYet = 'No Products Yet';
+  static const String noProductsSubtitle =
+      'Create your first product for this brand';
+
+  static const String createBrand = '✨ Create Brand';
+  static const String createProduct = 'Create Product';
+  static const String accountDetails = 'Account Details';
+  static const String settings = 'Settings';
+  static const String about = 'About';
+  static const String logout = 'Logout';
+  static const String marketMindUser = 'MarketMind User';
+  static const String contentCreator = 'Content Creator';
+  static const String videos = 'Videos';
+  static const String products = 'Products';
+  static const String posters = 'Posters';
+  static const String display = 'Display';
+  static const String notifications = 'Notifications';
+  static const String dataPrivacy = 'Data & Privacy';
+  static const String darkMode = 'Dark Mode';
+  static const String darkModeSubtitle = 'Enable dark theme';
+  static const String pushNotifications = 'Push Notifications';
+  static const String pushNotificationsSubtitle = 'Receive alerts';
+  static const String emailNotifications = 'Email Notifications';
+  static const String emailNotificationsSubtitle = 'Get email updates';
+  static const String soundEffects = 'Sound Effects';
+  static const String soundEffectsSubtitle = 'Play notification sounds';
+  static const String exportData = 'Export Data';
+  static const String clearCache = 'Clear Cache';
+  static const String clearCacheTitle = 'Clear Cache?';
+  static const String clearCacheMessage =
+      'This will remove cached data. Confirm?';
+
+  static const String aboutMarketMind = 'About MarketMind';
+  static const String appVersion = 'v1.0.0';
+  static const String keyFeatures = 'Key Features';
+  static const String technologyStack = 'Technology Stack';
+  static const String viewOnGithub = 'View on GitHub';
+  static const String githubHandle = 'github.com/alkaifaftab000';
+  static const String copyright = '© 2026 MarketMind. All rights reserved.';
+
+  static const String confirmLogout = 'Confirm Logout';
+  static const String logoutMessage =
+      'Are you sure you want to logout? You can always log back in later.';
+  static const String logoutNow = 'Logout Now';
+
+  static const String deleteBrand = 'Delete Brand';
+  static const String editBrand = 'Edit Brand';
+  static const String share = 'Share';
+  static const String description = 'Description';
+  static const String details = 'Details';
+  static const String category = 'Category';
+  static const String targetAudience = 'Target Audience';
+  static const String productions = 'Productions';
+  static const String created = 'Created';
+  static const String updated = 'Updated';
+  static const String edit = 'Edit';
+  static const String notSet = 'Not set';
+  static const String cancel = 'Cancel';
+  static const String delete = 'Delete';
+
+  static const String generatedShortClipsTitle = 'Generated Short Clips';
+  static const String finalVideoTitle = 'Final Video';
+  static const String reviewClipsHint =
+      'Review, reorder and regenerate clips before final merge';
+  static const String uploadShortClip = 'Upload Clip';
+  static const String makeFinalVideo = 'Make Final Video';
+  static const String maxShortClipsReached =
+      'Already 5 clips (maximum allowed)';
+  static const String shortClipUploaded = 'Short clip uploaded';
+
   static const List<OnboardingContent> onboardingItems = [
     OnboardingContent(
       imagePath: 'assets/onboarding/1.png',

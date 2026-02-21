@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:market_mind/constants/app_colors.dart';
+import 'package:market_mind/constants/app_strings.dart';
+import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/utils/app_notification.dart';
 
 class SettingsModal extends StatefulWidget {
@@ -31,25 +33,19 @@ class _SettingsModalState extends State<SettingsModal> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Settings',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimaryLight,
-              ),
+              AppStrings.settings,
+              style: AppTextStyles.sectionTitle(isDark),
             ),
             const SizedBox(height: 20),
 
             // Display Settings
-            _buildSectionHeader(isDark, 'Display'),
+            _buildSectionHeader(isDark, AppStrings.display),
             const SizedBox(height: 12),
             _buildSettingsTile(
               isDark,
               icon: Icons.dark_mode_rounded,
-              title: 'Dark Mode',
-              subtitle: 'Enable dark theme',
+              title: AppStrings.darkMode,
+              subtitle: AppStrings.darkModeSubtitle,
               trailing: Switch(
                 value: _darkModeEnabled,
                 onChanged: (value) {
@@ -65,13 +61,13 @@ class _SettingsModalState extends State<SettingsModal> {
             const SizedBox(height: 20),
 
             // Notifications
-            _buildSectionHeader(isDark, 'Notifications'),
+            _buildSectionHeader(isDark, AppStrings.notifications),
             const SizedBox(height: 12),
             _buildSettingsTile(
               isDark,
               icon: Icons.notifications_rounded,
-              title: 'Push Notifications',
-              subtitle: 'Receive alerts',
+              title: AppStrings.pushNotifications,
+              subtitle: AppStrings.pushNotificationsSubtitle,
               trailing: Switch(
                 value: _notificationsEnabled,
                 onChanged: (value) {
@@ -84,8 +80,8 @@ class _SettingsModalState extends State<SettingsModal> {
             _buildSettingsTile(
               isDark,
               icon: Icons.mail_outline_rounded,
-              title: 'Email Notifications',
-              subtitle: 'Get email updates',
+              title: AppStrings.emailNotifications,
+              subtitle: AppStrings.emailNotificationsSubtitle,
               trailing: Switch(
                 value: _emailNotifications,
                 onChanged: (value) {
@@ -98,8 +94,8 @@ class _SettingsModalState extends State<SettingsModal> {
             _buildSettingsTile(
               isDark,
               icon: Icons.volume_up_rounded,
-              title: 'Sound Effects',
-              subtitle: 'Play notification sounds',
+              title: AppStrings.soundEffects,
+              subtitle: AppStrings.soundEffectsSubtitle,
               trailing: Switch(
                 value: _soundEnabled,
                 onChanged: (value) {
@@ -111,12 +107,12 @@ class _SettingsModalState extends State<SettingsModal> {
             const SizedBox(height: 20),
 
             // Data Options
-            _buildSectionHeader(isDark, 'Data & Privacy'),
+            _buildSectionHeader(isDark, AppStrings.dataPrivacy),
             const SizedBox(height: 12),
             _buildActionTile(
               isDark,
               icon: Icons.download_rounded,
-              title: 'Export Data',
+              title: AppStrings.exportData,
               onTap: () {
                 AppNotification.success(
                   context,
@@ -128,7 +124,7 @@ class _SettingsModalState extends State<SettingsModal> {
             _buildActionTile(
               isDark,
               icon: Icons.delete_sweep_rounded,
-              title: 'Clear Cache',
+              title: AppStrings.clearCache,
               onTap: () {
                 _showClearCacheDialog(isDark);
               },
@@ -142,11 +138,7 @@ class _SettingsModalState extends State<SettingsModal> {
   Widget _buildSectionHeader(bool isDark, String title) {
     return Text(
       title,
-      style: GoogleFonts.poppins(
-        fontSize: 13,
-        fontWeight: FontWeight.w700,
-        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-      ),
+      style: AppTextStyles.bodyStrong(isDark).copyWith(fontSize: 13),
     );
   }
 
@@ -265,18 +257,18 @@ class _SettingsModalState extends State<SettingsModal> {
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? AppColors.darkCard : Colors.white,
         title: Text(
-          'Clear Cache?',
+          AppStrings.clearCacheTitle,
           style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
         ),
         content: Text(
-          'This will remove cached data. Confirm?',
+          AppStrings.clearCacheMessage,
           style: GoogleFonts.poppins(fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Cancel',
+              AppStrings.cancel,
               style: GoogleFonts.poppins(color: AppColors.textSecondaryDark),
             ),
           ),
@@ -285,7 +277,10 @@ class _SettingsModalState extends State<SettingsModal> {
               Navigator.pop(context);
               AppNotification.success(context, message: 'Cache cleared');
             },
-            child: Text('Clear', style: GoogleFonts.poppins(color: Colors.red)),
+            child: Text(
+              AppStrings.clearCache,
+              style: GoogleFonts.poppins(color: Colors.red),
+            ),
           ),
         ],
       ),
