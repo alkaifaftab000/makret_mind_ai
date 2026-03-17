@@ -282,11 +282,18 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
   }
 
   Future<void> _makeFinalVideo() async {
+    // Show a quick warning that it's mocked, since real backend video gen is pending
+    AppNotification.info(
+      context,
+      message: 'Triggering local mock render. Real backend pipeline not yet connected.',
+    );
+
     _showLoadingDialog('Making final video...');
     setState(() => _isGeneratingFinal = true);
 
     try {
-      await Future.delayed(const Duration(seconds: 6));
+      // simulate network request to patch final video
+      await Future.delayed(const Duration(seconds: 3));
 
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();

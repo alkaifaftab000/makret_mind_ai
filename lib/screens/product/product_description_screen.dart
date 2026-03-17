@@ -214,9 +214,16 @@ class _ProductDescriptionScreenState extends State<ProductDescriptionScreen> {
         ),
       );
 
-      await Future.delayed(const Duration(seconds: 6));
+      await Future.delayed(const Duration(seconds: 2));
       if (!mounted) return;
       Navigator.pop(context);
+
+      if (updated.scenes.isEmpty) {
+        AppNotification.info(
+          context,
+          message: 'Backend scenes pending. Loading mock short clips for testing.',
+        );
+      }
 
       final completed = await Navigator.push<bool>(
         context,

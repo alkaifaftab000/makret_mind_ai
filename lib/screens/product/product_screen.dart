@@ -9,6 +9,7 @@ import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/models/brand_model.dart';
 import 'package:market_mind/models/product_model.dart';
 import 'package:market_mind/screens/product/product_description_screen.dart';
+import 'package:market_mind/screens/product/product_generation_screen.dart';
 import 'package:market_mind/services/product_service.dart';
 import 'package:market_mind/utils/app_notification.dart';
 import 'package:market_mind/utils/image_utils.dart';
@@ -105,13 +106,30 @@ class _ProductScreenState extends State<ProductScreen> {
                   product: _products[index],
                   isDark: isDark,
                   onTap: () async {
-                    final changed = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            ProductDescriptionScreen(product: _products[index]),
-                      ),
-                    );
+                    final product = _products[index];
+                    bool? changed;
+
+                    if (product.status == 'ready' || product.finalVideoUrl != null) {
+                      // Navigate straight to final video
+                      changed = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ProductGenerationScreen(
+                            product: product,
+                            startWithFinal: true,
+                            overrideFinalAsset: product.finalVideoUrl,
+                          ),
+                        ),
+                      );
+                    } else {
+                      // Navigate to description/editor
+                      changed = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ProductDescriptionScreen(product: product),
+                        ),
+                      );
+                    }
 
                     if (changed == true) {
                       await _loadProducts();
