@@ -5,6 +5,7 @@ import 'package:logger/logger.dart';
 import 'package:market_mind/constants/api_constants.dart';
 import 'package:market_mind/models/brand_model.dart';
 import 'package:market_mind/services/auth_service.dart';
+import 'package:market_mind/services/cloudinary_service.dart';
 
 class BrandService {
   static final BrandService _instance = BrandService._internal();
@@ -92,8 +93,15 @@ class BrandService {
   }) async {
     try {
       _logger.i('Creating new brand (No logo file)...');
+      
+      final currentUserId = authService.currentUser?.id;
+      if (currentUserId == null) {
+        throw Exception('User is not authenticated. Please log in again.');
+      }
+
       final data = {
         'name': name,
+        'user_id': currentUserId,
         if (logo != null) 'logo': logo,
         if (targetAudience != null) 'target_audience': targetAudience,
         if (category != null) 'category': category,
@@ -112,13 +120,14 @@ class BrandService {
     } catch (e) {
       _logger.e('Error creating brand: $e');
       if (e is DioException) {
+        _logger.e('Dio Exception Data: ${e.response?.data}');
         _handleDioError(e);
       }
       rethrow;
     }
   }
 
-  /// Create a new brand with a logo upload (POST /api/brands/with-logo)
+  /// Create a new brand with a logo upload (POST /api/brands) using Cloudinary
   Future<BrandModel> createBrandWithLogo({
     required String name,
     required File logoFile,
@@ -126,33 +135,22 @@ class BrandService {
     String? category,
   }) async {
     try {
-      _logger.i('Creating new brand with logo file upload...');
+      _logger.i('Uploading logo to Cloudinary...');
       
-      final String fileName = logoFile.path.split('/').last;
+      final String? logoUrl = await cloudinaryService.uploadImage(logoFile, folder: 'brands');
       
-      final formData = FormData.fromMap({
-        'name': name,
-        if (targetAudience != null) 'target_audience': targetAudience,
-        if (category != null) 'category': category,
-        'logo': await MultipartFile.fromFile(
-          logoFile.path, 
-          filename: fileName,
-        ),
-      });
-
-      final response = await _dio.post(
-        ApiConstants.brandWithLogo,
-        data: formData,
-        options: Options(
-          contentType: 'multipart/form-data',
-        ),
-      );
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return BrandModel.fromJson(response.data);
-      } else {
-        throw Exception('Failed to create brand. Server returned ${response.statusCode}');
+      if (logoUrl == null) {
+        throw Exception('Failed to get logo URL from Cloudinary');
       }
+
+      _logger.i('Creating new brand with hosted logo URL...');
+      
+      return await createBrand(
+        name: name,
+        logo: logoUrl,
+        targetAudience: targetAudience,
+        category: category,
+      );
     } catch (e) {
       _logger.e('Error creating brand with logo: $e');
       if (e is DioException) {

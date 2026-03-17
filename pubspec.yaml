@@ -71,4 +71,5 @@ dependencies:
   dio: ^5.9.2
   flutter_secure_storage: ^10.0.0
   logger: ^2.6.2
+  cloudinary_public: ^0.23.1
 

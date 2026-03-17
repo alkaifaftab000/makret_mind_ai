@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:market_mind/models/product_model.dart';
 import 'package:market_mind/services/auth_service.dart';
+import 'package:market_mind/services/cloudinary_service.dart';
 
 class ProductService {
   final Dio _dio = authService.dioClient;
@@ -38,30 +41,95 @@ class ProductService {
     String? customAspectRatio,
     String? videoLength,
   }) async {
-    // We use /api/products/with-images to upload actual files
-    final formData = FormData.fromMap({
-      'name': name,
-      'brandId': brandId, // API needs brandId
-      'tone': tone,
-      'aiModel': modelType, // API needs aiModel
-      'aspectRatio': customAspectRatio ?? aspectRatio, // API needs aspectRatio
-      'duration': videoLength ?? 'short', // API needs duration
-      'userPrompt': prompt, // API needs userPrompt
-      'type': type,
-    });
+    // 1. Upload all local images to Cloudinary first
+    List<File> localFiles = imagePaths
+        .where((path) => !path.startsWith('http'))
+        .map((path) => File(path))
+        .toList();
 
-    for (var path in imagePaths) {
-      if (!path.startsWith('http')) {
-        formData.files.add(
-          MapEntry('images', await MultipartFile.fromFile(path)),
-        );
-      }
+    List<String> uploadedUrls = [];
+    if (localFiles.isNotEmpty) {
+      uploadedUrls = await cloudinaryService.uploadMultipleImages(localFiles, folder: 'products');
     }
+
+    // Combine any existing network URLs with the newly uploaded ones
+    List<String> finalImageUrls = [
+      ...imagePaths.where((path) => path.startsWith('http')),
+      ...uploadedUrls,
+    ];
+
+    if (finalImageUrls.isEmpty) {
+      throw Exception('Failed to upload images or no images provided');
+    }
+
+    // 2. Map UI values to Backend Enum values
+    String mapTone(String t) {
+      final tl = t.toLowerCase();
+      if (tl.contains('professional')) return 'professional';
+      if (tl.contains('playful')) return 'playful';
+      if (tl.contains('emotional')) return 'emotional';
+      if (tl.contains('dramatic')) return 'dramatic';
+      return 'professional'; // default fallback
+    }
+
+    String mapAspectRatio(String r) {
+      final rl = r.toLowerCase();
+      if (rl.contains('mobile') || rl.contains('9:16')) return 'mobile';
+      if (rl.contains('desktop') || rl.contains('16:9')) return 'desktop';
+      return 'mobile'; // default fallback
+    }
+
+    String mapDuration(String d) {
+      final dl = d.toLowerCase();
+      if (dl.contains('15') || dl.contains('short')) return 'short';
+      if (dl.contains('30') || dl.contains('medium')) return 'medium';
+      if (dl.contains('60') || dl.contains('long')) return 'long';
+      if (dl.contains('extra') || dl.contains('120')) return 'extraLong';
+      return 'short'; // default fallback
+    }
+
+    String mapAiModel(String m) {
+      final ml = m.toLowerCase();
+      if (ml == 'no' || ml == 'none') return 'none';
+      if (ml == 'male') return 'male';
+      if (ml == 'female') return 'female';
+      return 'none'; // default fallback
+    }
+
+    // Usually audio is somewhat decoupled, but if its backend enum let's do it similarly
+    // Assuming backend takes male, female, or none for audio too if it's there
+    String mapAudioType(String a) {
+      final al = a.toLowerCase();
+      if (al == 'no audio' || al == 'none') return 'none'; // Maybe 'none'
+      if (al == 'male') return 'male';
+      if (al == 'female') return 'female';
+      return 'none';
+    }
+
+    final mappedTone = mapTone(tone);
+    final mappedAspectRatio = mapAspectRatio(customAspectRatio ?? aspectRatio);
+    final mappedDuration = mapDuration(videoLength ?? 'short');
+    final mappedModel = mapAiModel(modelType);
+
+    // 3. Post directly to /api/products with JSON data
+    final Map<String, dynamic> payload = {
+      'name': name,
+      'brand_id': brandId, // API needs brand_id
+      'images': finalImageUrls,
+      'type': type,
+      'config': {
+        'tone': mappedTone,
+        'aiModel': mappedModel, 
+        'aspectRatio': mappedAspectRatio, 
+        'duration': mappedDuration, 
+        'userPrompt': prompt, 
+      }
+    };
 
     try {
       final response = await _dio.post(
-        '/api/products/with-images',
-        data: formData,
+        '/api/products',
+        data: payload,
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
         return ProductModel.fromJson(response.data);
@@ -100,15 +168,53 @@ class ProductService {
     String? videoLength,
   }) async {
     try {
+      String mapTone(String t) {
+        final tl = t.toLowerCase();
+        if (tl.contains('professional')) return 'professional';
+        if (tl.contains('playful')) return 'playful';
+        if (tl.contains('emotional')) return 'emotional';
+        if (tl.contains('dramatic')) return 'dramatic';
+        return 'professional'; 
+      }
+
+      String mapAspectRatio(String r) {
+        final rl = r.toLowerCase();
+        if (rl.contains('mobile') || rl.contains('9:16')) return 'mobile';
+        if (rl.contains('desktop') || rl.contains('16:9')) return 'desktop';
+        return 'mobile'; 
+      }
+
+      String mapDuration(String d) {
+        final dl = d.toLowerCase();
+        if (dl.contains('15') || dl.contains('short')) return 'short';
+        if (dl.contains('30') || dl.contains('medium')) return 'medium';
+        if (dl.contains('60') || dl.contains('long')) return 'long';
+        if (dl.contains('extra') || dl.contains('120')) return 'extraLong';
+        return 'short'; 
+      }
+
+      String mapAiModel(String m) {
+        final ml = m.toLowerCase();
+        if (ml == 'no' || ml == 'none') return 'none';
+        if (ml == 'male') return 'male';
+        if (ml == 'female') return 'female';
+        return 'none'; 
+      }
+
+      final mappedTone = mapTone(tone);
+      final mappedAspectRatio = mapAspectRatio(customAspectRatio ?? aspectRatio);
+      final mappedDuration = mapDuration(videoLength ?? 'short');
+      final mappedModel = mapAiModel(modelType);
+
       final response = await _dio.patch(
         '/api/products/${product.id}',
         data: {
           'name': name,
           'config': {
-            'tone': tone,
-            'aiModel': modelType,
-            'aspectRatio': customAspectRatio ?? aspectRatio,
-            'duration': videoLength,
+            'tone': mappedTone,
+            'aiModel': mappedModel,
+            'aspectRatio': mappedAspectRatio,
+            'duration': mappedDuration,
             'userPrompt': prompt,
           },
         },

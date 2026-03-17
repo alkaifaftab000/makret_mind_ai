@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:market_mind/services/user_service.dart';
 
 import 'package:market_mind/services/auth_service.dart';
+import 'package:market_mind/services/cloudinary_service.dart';
 
 class AccountModal extends StatefulWidget {
   const AccountModal({super.key});
@@ -54,11 +55,17 @@ class _AccountModalState extends State<AccountModal> {
 
   Future<void> _saveProfile() async {
     try {
-      // In a real app we'd also upload the image to Cloudinary yielding a URL
-      // but the API docs specify: { "name": "New Name", "avatar": "https://..." }
+      String? avatarUrl;
+      if (_profileImagePath != null) {
+        avatarUrl = await cloudinaryService.uploadImage(
+          File(_profileImagePath!),
+          folder: 'avatars',
+        );
+      }
+
       await userService.updateCurrentUser(
         name: _nameController.text.trim(),
-        // avatar: _profileImagePath != null ? await _uploadImageToCloudinary(_profileImagePath!) : null
+        avatar: avatarUrl,
       );
 
       if (mounted) {
