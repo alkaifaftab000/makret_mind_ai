@@ -18,7 +18,6 @@ void main() async {
   Hive.registerAdapter(BrandModelAdapter());
 
   // Initialize BrandService
-  await brandService.init();
   await productService.init();
 
   runApp(const MainApp());

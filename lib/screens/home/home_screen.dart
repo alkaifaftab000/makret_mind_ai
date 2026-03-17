@@ -325,6 +325,16 @@ class _BrandCard extends StatelessWidget {
   }
 
   Widget _buildBrandImage() {
+    if (brand.imagePath.startsWith('http')) {
+      return Image.network(
+        brand.imagePath,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildImageFallback(),
+      );
+    }
+    
     final imageFile = ImageUtils.loadImage(brand.imagePath);
     if (imageFile != null && imageFile.existsSync()) {
       return Image.file(
@@ -335,6 +345,10 @@ class _BrandCard extends StatelessWidget {
       );
     }
     // Fallback to placeholder
+    return _buildImageFallback();
+  }
+
+  Widget _buildImageFallback() {
     return Container(
       color: Colors.grey.shade300,
       child: Center(
@@ -423,18 +437,15 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
     });
 
     try {
-      final brand = await brandService.createBrand(
-        name: _nameController.text,
-        imagePath: _selectedImagePath!,
-        description: _descriptionController.text.isEmpty
-            ? null
-            : _descriptionController.text,
+      final brand = await brandService.createBrandWithLogo(
+        name: _nameController.text.trim(),
+        logoFile: File(_selectedImagePath!),
         targetAudience: _audienceController.text.isEmpty
             ? null
-            : _audienceController.text,
+            : _audienceController.text.trim(),
         category: _categoryController.text.isEmpty
             ? null
-            : _categoryController.text,
+            : _categoryController.text.trim(),
       );
 
       if (mounted) {

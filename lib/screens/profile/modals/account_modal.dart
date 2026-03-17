@@ -8,6 +8,10 @@ import 'package:market_mind/utils/image_utils.dart';
 import 'package:market_mind/utils/permission_utils.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:market_mind/services/user_service.dart';
+import 'package:market_mind/models/user_model.dart';
+import 'package:market_mind/services/auth_service.dart';
+
 class AccountModal extends StatefulWidget {
   const AccountModal({super.key});
 
@@ -26,8 +30,9 @@ class _AccountModalState extends State<AccountModal> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: 'MarketMind User');
-    _emailController = TextEditingController(text: 'user@example.com');
+    final user = authService.currentUser;
+    _nameController = TextEditingController(text: user?.name ?? 'MarketMind User');
+    _emailController = TextEditingController(text: user?.email ?? 'user@example.com');
     _bioController = TextEditingController(
       text: 'Content creator focused on brand storytelling.',
     );
@@ -43,9 +48,24 @@ class _AccountModalState extends State<AccountModal> {
     super.dispose();
   }
 
-  void _saveProfile() {
-    setState(() => _isEditing = false);
-    AppNotification.success(context, message: 'Profile updated successfully');
+  Future<void> _saveProfile() async {
+    try {
+      // In a real app we'd also upload the image to Cloudinary yielding a URL 
+      // but the API docs specify: { "name": "New Name", "avatar": "https://..." }
+      await userService.updateCurrentUser(
+        name: _nameController.text.trim(),
+        // avatar: _profileImagePath != null ? await _uploadImageToCloudinary(_profileImagePath!) : null
+      );
+      
+      if (mounted) {
+        setState(() => _isEditing = false);
+        AppNotification.success(context, message: 'Profile updated successfully');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppNotification.error(context, message: 'Failed to update profile');
+      }
+    }
   }
 
   Future<void> _changeProfilePhoto() async {

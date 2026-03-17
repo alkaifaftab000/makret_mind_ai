@@ -1,173 +1,279 @@
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:uuid/uuid.dart';
+import 'dart:io';
+
+import 'package:dio/dio.dart';
+import 'package:logger/logger.dart';
+import 'package:market_mind/constants/api_constants.dart';
 import 'package:market_mind/models/brand_model.dart';
+import 'package:market_mind/services/auth_service.dart';
 
 class BrandService {
-  static const String _boxName = 'brands';
-  late Box<BrandModel> _brandsBox;
+  static final BrandService _instance = BrandService._internal();
 
-  /// Initialize the service and open Hive box
-  Future<void> init() async {
-    _brandsBox = await Hive.openBox<BrandModel>(_boxName);
+  factory BrandService() {
+    return _instance;
   }
 
-  /// Get all brands from local storage
-  Future<List<BrandModel>> getAllBrands() async {
+  BrandService._internal();
+
+  final Logger _logger = Logger(printer: PrettyPrinter());
+
+  // Use the Dio instance from AuthService because it already handles injecting the token
+  Dio get _dio => authService.dioClient;
+
+  /// Get all brands (GET /api/brands)
+  Future<List<BrandModel>> getAllBrands({int skip = 0, int limit = 100}) async {
     try {
-      return _brandsBox.values.toList();
+      _logger.i('Fetching all brands...');
+      final response = await _dio.get(
+        ApiConstants.brands,
+        queryParameters: {
+          'skip': skip,
+          'limit': limit,
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => BrandModel.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load brands. Server returned ${response.statusCode}');
+      }
     } catch (e) {
-      print('Error fetching brands: $e');
-      return [];
+      _logger.e('Error fetching brands: $e');
+      if (e is DioException) {
+        _handleDioError(e);
+      }
+      rethrow;
     }
   }
 
-  /// Get a single brand by ID
+  /// Get a single brand by ID (GET /api/brands/{brand_id})
   Future<BrandModel?> getBrandById(String id) async {
     try {
-      return _brandsBox.values.cast<BrandModel?>().firstWhere(
-        (brand) => brand?.id == id,
-      );
+      _logger.i('Fetching brand ID: $id');
+      final response = await _dio.get('${ApiConstants.brands}/$id');
+      
+      if (response.statusCode == 200) {
+        return BrandModel.fromJson(response.data);
+      } else {
+        throw Exception('Failed to load brand. Server returned ${response.statusCode}');
+      }
     } catch (e) {
-      print('Error fetching brand: $e');
-      return null;
+      _logger.e('Error fetching brand: $e');
+      if (e is DioException) {
+        _handleDioError(e);
+      }
+      rethrow;
     }
   }
 
-  /// Create a new brand
+  /// Get product count for a brand (GET /api/brands/{brand_id}/products-count)
+  Future<int> getBrandProductCount(String id) async {
+    try {
+      _logger.i('Fetching product count for brand ID: $id');
+      final response = await _dio.get('${ApiConstants.brands}/$id/products-count');
+      
+      if (response.statusCode == 200) {
+        return response.data['product_count'] as int;
+      }
+      return 0;
+    } catch (e) {
+       _logger.e('Error fetching brand product count: $e');
+       return 0; // Fallback to 0 if count fails, rather than crashing UI
+    }
+  }
+
+  /// Create a new brand without file upload (POST /api/brands)
   Future<BrandModel> createBrand({
     required String name,
-    required String imagePath,
-    String? description,
+    String? logo,
     String? targetAudience,
     String? category,
   }) async {
     try {
-      final id = const Uuid().v4();
-      final brand = BrandModel(
-        id: id,
-        name: name,
-        imagePath: imagePath,
-        description: description,
-        targetAudience: targetAudience,
-        category: category,
-        productions: 0,
+      _logger.i('Creating new brand (No logo file)...');
+      final data = {
+        'name': name,
+        if (logo != null) 'logo': logo,
+        if (targetAudience != null) 'target_audience': targetAudience,
+        if (category != null) 'category': category,
+      };
+
+      final response = await _dio.post(
+        ApiConstants.brands,
+        data: data,
       );
 
-      await _brandsBox.put(id, brand);
-      print('Brand created successfully: $id');
-      return brand;
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return BrandModel.fromJson(response.data);
+      } else {
+        throw Exception('Failed to create brand. Server returned ${response.statusCode}');
+      }
     } catch (e) {
-      print('Error creating brand: $e');
+      _logger.e('Error creating brand: $e');
+      if (e is DioException) {
+        _handleDioError(e);
+      }
       rethrow;
     }
   }
 
-  /// Update an existing brand
+  /// Create a new brand with a logo upload (POST /api/brands/with-logo)
+  Future<BrandModel> createBrandWithLogo({
+    required String name,
+    required File logoFile,
+    String? targetAudience,
+    String? category,
+  }) async {
+    try {
+      _logger.i('Creating new brand with logo file upload...');
+      
+      final String fileName = logoFile.path.split('/').last;
+      
+      final formData = FormData.fromMap({
+        'name': name,
+        if (targetAudience != null) 'target_audience': targetAudience,
+        if (category != null) 'category': category,
+        'logo': await MultipartFile.fromFile(
+          logoFile.path, 
+          filename: fileName,
+        ),
+      });
+
+      final response = await _dio.post(
+        ApiConstants.brandWithLogo,
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+        ),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return BrandModel.fromJson(response.data);
+      } else {
+        throw Exception('Failed to create brand. Server returned ${response.statusCode}');
+      }
+    } catch (e) {
+      _logger.e('Error creating brand with logo: $e');
+      if (e is DioException) {
+        _handleDioError(e);
+      }
+      rethrow;
+    }
+  }
+
+  /// Update an existing brand completely (PUT /api/brands/{brand_id})
   Future<BrandModel> updateBrand({
     required String id,
-    String? name,
-    String? imagePath,
-    String? description,
+    required String name,
+    required String logo,
     String? targetAudience,
     String? category,
-    int? productions,
   }) async {
     try {
-      final brand = _brandsBox.get(id);
-      if (brand == null) throw Exception('Brand not found');
+      _logger.i('Updating brand ID: $id');
+      final data = {
+        'name': name,
+        'logo': logo,
+        if (targetAudience != null) 'target_audience': targetAudience,
+        if (category != null) 'category': category,
+      };
 
-      final updatedBrand = brand.copyWith(
-        name: name,
-        imagePath: imagePath,
-        description: description,
-        targetAudience: targetAudience,
-        category: category,
-        productions: productions,
-        updatedAt: DateTime.now(),
+      final response = await _dio.put(
+        '${ApiConstants.brands}/$id',
+        data: data,
       );
 
-      await _brandsBox.put(id, updatedBrand);
-      print('Brand updated successfully: $id');
-      return updatedBrand;
+      if (response.statusCode == 200) {
+        return BrandModel.fromJson(response.data);
+      } else {
+        throw Exception('Failed to update brand. Server returned ${response.statusCode}');
+      }
     } catch (e) {
-      print('Error updating brand: $e');
+      _logger.e('Error updating brand: $e');
+      if (e is DioException) {
+        _handleDioError(e);
+      }
       rethrow;
     }
   }
 
-  /// Delete a brand by ID
+  /// Patch specific fields of a brand (PATCH /api/brands/{brand_id})
+  Future<BrandModel> patchBrand({
+    required String id,
+    String? name,
+    String? logo,
+    String? targetAudience,
+    String? category,
+  }) async {
+    try {
+      _logger.i('Patching brand ID: $id');
+      
+      final Map<String, dynamic> data = {};
+      if (name != null) data['name'] = name;
+      if (logo != null) data['logo'] = logo;
+      if (targetAudience != null) data['target_audience'] = targetAudience;
+      if (category != null) data['category'] = category;
+
+      // Don't make empty updates Request
+      if (data.isEmpty) throw Exception('No fields to patch');
+
+      final response = await _dio.patch(
+        '${ApiConstants.brands}/$id',
+        data: data,
+      );
+
+      if (response.statusCode == 200) {
+        return BrandModel.fromJson(response.data);
+      } else {
+        throw Exception('Failed to patch brand. Server returned ${response.statusCode}');
+      }
+    } catch (e) {
+      _logger.e('Error patching brand: $e');
+      if (e is DioException) {
+        _handleDioError(e);
+      }
+      rethrow;
+    }
+  }
+
+  /// Delete a brand by ID (DELETE /api/brands/{brand_id})
   Future<void> deleteBrand(String id) async {
     try {
-      await _brandsBox.delete(id);
-      print('Brand deleted successfully: $id');
-    } catch (e) {
-      print('Error deleting brand: $e');
-      rethrow;
-    }
-  }
+      _logger.w('Deleting brand ID: $id');
+      final response = await _dio.delete('${ApiConstants.brands}/$id');
 
-  /// Search brands by name
-  Future<List<BrandModel>> searchBrands(String query) async {
-    try {
-      return _brandsBox.values
-          .where(
-            (brand) =>
-                brand.name.toLowerCase().contains(query.toLowerCase()) ||
-                (brand.description?.toLowerCase().contains(
-                      query.toLowerCase(),
-                    ) ??
-                    false),
-          )
-          .toList();
-    } catch (e) {
-      print('Error searching brands: $e');
-      return [];
-    }
-  }
-
-  /// Get total number of brands
-  Future<int> getBrandCount() async {
-    try {
-      return _brandsBox.length;
-    } catch (e) {
-      print('Error getting brand count: $e');
-      return 0;
-    }
-  }
-
-  /// Clear all brands (for testing)
-  Future<void> clearAllBrands() async {
-    try {
-      await _brandsBox.clear();
-      print('All brands cleared');
-    } catch (e) {
-      print('Error clearing brands: $e');
-      rethrow;
-    }
-  }
-
-  /// Sync brands with backend (placeholder for future API integration)
-  /// This will be called when you implement backend API
-  Future<void> syncWithBackend(
-    Future<Map<String, dynamic>> Function(BrandModel) submitBrand,
-  ) async {
-    try {
-      final brands = await getAllBrands();
-      for (final brand in brands) {
-        // Submit each brand to backend
-        final response = await submitBrand(brand);
-        if (response['success'] == true) {
-          // Update brand with backend ID if needed
-          final backendId = response['id'];
-          if (backendId != null) {
-            await updateBrand(id: brand.id);
-          }
-        }
+      if (response.statusCode != 200) {
+        throw Exception('Failed to delete brand. Server returned ${response.statusCode}');
       }
-      print('Brands synced with backend successfully');
+      _logger.i('Brand deleted successfully');
     } catch (e) {
-      print('Error syncing with backend: $e');
+      _logger.e('Error deleting brand: $e');
+      if (e is DioException) {
+        _handleDioError(e);
+      }
       rethrow;
+    }
+  }
+
+  void _handleDioError(DioException e) {
+    if (e.response != null) {
+      final statusCode = e.response?.statusCode;
+      final responseData = e.response?.data;
+      
+      if (statusCode == 422) {
+        throw Exception('Validation error: Please check your input data.');
+      } else if (statusCode == 401 || statusCode == 403) {
+        throw Exception('Unauthorized. Your session may have expired.');
+      } else if (statusCode == 404) {
+        throw Exception('Brand not found.');
+      } else if (statusCode! >= 500) {
+        throw Exception('Internal server error. Please try again later.');
+      } else {
+        throw Exception('Server error: $responseData');
+      }
+    } else {
+      throw Exception('Network error: Unable to connect to the server.');
     }
   }
 }

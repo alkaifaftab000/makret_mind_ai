@@ -10,20 +10,16 @@ class BrandDetailsActionService {
   Future<BrandModel> editBrand({
     required BrandModel brand,
     String? name,
-    String? imagePath,
-    String? description,
+    String? imagePath, // used as logo
     String? targetAudience,
     String? category,
-    int? productions,
   }) async {
-    return brandService.updateBrand(
+    return brandService.patchBrand(
       id: brand.id,
       name: name,
-      imagePath: imagePath,
-      description: description,
+      logo: imagePath,
       targetAudience: targetAudience,
       category: category,
-      productions: productions,
     );
   }
 

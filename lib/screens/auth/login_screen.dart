@@ -6,9 +6,69 @@ import 'package:market_mind/constants/app_strings.dart';
 import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/screens/auth/register_screen.dart';
 import 'package:market_mind/screens/main_navigation_screen.dart';
+import 'package:market_mind/services/auth_service.dart';
+import 'package:market_mind/utils/app_notification.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  bool _isGoogleLoading = false;
+  bool _isDevLoginLoading = false;
+
+  Future<void> _handleDevLogin() async {
+    setState(() => _isDevLoginLoading = true);
+    try {
+      final user = await authService.devLogin();
+      if (user != null && mounted) {
+        AppNotification.success(context, message: 'Dev Login Success: Welcome back, ${user.name}!');
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AppNotification.error(
+          context,
+          message: e.toString().replaceAll('Exception: ', ''),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isDevLoginLoading = false);
+      }
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isGoogleLoading = true);
+    try {
+      final user = await authService.loginWithGoogle();
+      if (user != null && mounted) {
+        AppNotification.success(context, message: 'Welcome back, ${user.name}!');
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AppNotification.error(
+          context,
+          message: e.toString().replaceAll('Exception: ', ''),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isGoogleLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,12 +108,12 @@ class LoginScreen extends StatelessWidget {
                 style: AppTextStyles.authSubtitle(isDark),
               ),
               const SizedBox(height: 18),
-              _AuthField(
+              const _AuthField(
                 label: AppStrings.emailLabel,
                 hint: AppStrings.emailHint,
               ),
               const SizedBox(height: 12),
-              _AuthField(
+              const _AuthField(
                 label: AppStrings.passwordLabel,
                 hint: AppStrings.passwordHint,
                 obscure: true,
@@ -62,14 +122,7 @@ class LoginScreen extends StatelessWidget {
               SizedBox(
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                        builder: (_) => const MainNavigationScreen(),
-                      ),
-                      (route) => false,
-                    );
-                  },
+                  onPressed: _isDevLoginLoading ? null : _handleDevLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.buttonPrimary,
                     foregroundColor: AppColors.buttonText,
@@ -77,10 +130,19 @@ class LoginScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: Text(
-                    AppStrings.signIn,
-                    style: AppTextStyles.authButton,
-                  ),
+                  child: _isDevLoginLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          'Sign In (Dev Mode)',
+                          style: AppTextStyles.authButton,
+                        ),
                 ),
               ),
               const SizedBox(height: 18),
@@ -98,14 +160,24 @@ class LoginScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              const Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _SocialIconButton(path: 'assets/auth/google.svg'),
-                  SizedBox(width: 16),
-                  _SocialIconButton(path: 'assets/auth/meta.svg'),
-                  SizedBox(width: 16),
-                  _SocialIconButton(path: 'assets/auth/microsoft.svg'),
+                  _SocialIconButton(
+                    path: 'assets/auth/google.svg',
+                    onPressed: _handleGoogleSignIn,
+                    isLoading: _isGoogleLoading,
+                  ),
+                  const SizedBox(width: 16),
+                  _SocialIconButton(
+                    path: 'assets/auth/meta.svg',
+                    onPressed: () {},
+                  ),
+                  const SizedBox(width: 16),
+                  _SocialIconButton(
+                    path: 'assets/auth/microsoft.svg',
+                    onPressed: () {},
+                  ),
                 ],
               ),
               const SizedBox(height: 18),
@@ -179,8 +251,14 @@ class _AuthField extends StatelessWidget {
 
 class _SocialIconButton extends StatelessWidget {
   final String path;
+  final VoidCallback? onPressed;
+  final bool isLoading;
 
-  const _SocialIconButton({required this.path});
+  const _SocialIconButton({
+    required this.path,
+    this.onPressed,
+    this.isLoading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -193,10 +271,15 @@ class _SocialIconButton extends StatelessWidget {
         color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
         borderRadius: BorderRadius.circular(14),
       ),
-      child: IconButton(
-        onPressed: () {},
-        icon: SvgPicture.asset(path, width: 22, height: 22),
-      ),
+      child: isLoading
+          ? const Padding(
+              padding: EdgeInsets.all(14.0),
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : IconButton(
+              onPressed: onPressed,
+              icon: SvgPicture.asset(path, width: 22, height: 22),
+            ),
     );
   }
 }

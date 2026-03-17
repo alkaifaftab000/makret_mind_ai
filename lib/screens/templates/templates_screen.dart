@@ -152,7 +152,6 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
       name: template.name,
       type: 'video',
       imagePaths: List<String>.generate(3, (index) => 'template_$index'),
-      imageDescriptions: const [],
       prompt: template.config.prompt,
       tone: template.config.tone,
       modelType: template.config.modelType,
@@ -160,6 +159,8 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
       aspectRatio: template.config.aspectRatio,
       customAspectRatio: null,
       videoLength: template.config.videoLength,
+      status: 'final_ready',
+      scenes: [],
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -170,7 +171,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
         builder: (_) => ProductGenerationScreen(
           product: product,
           startWithFinal: true,
-          overrideFinalAsset: 'assets/video/short_clip3.mp4',
+          overrideFinalAsset: template.thumbnail,
         ),
       ),
     );

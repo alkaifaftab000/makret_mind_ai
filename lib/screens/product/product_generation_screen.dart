@@ -73,9 +73,7 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
       index,
     ) {
       final source = _dummyShortAssets[index % _dummyShortAssets.length];
-      final imageDescription = index < widget.product.imageDescriptions.length
-          ? widget.product.imageDescriptions[index]
-          : 'Auto generated description for image ${index + 1}';
+      final imageDescription = 'Auto generated description for image ${index + 1}';
 
       return _GeneratedClip(
         id: 'clip_$index',

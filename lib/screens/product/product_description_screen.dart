@@ -56,21 +56,17 @@ class _ProductDescriptionScreenState extends State<ProductDescriptionScreen> {
 
     _imagePaths = List<String>.from(_product.imagePaths);
     _imageDescriptionControllers = _buildDescriptionControllers(
-      descriptions: _product.imageDescriptions,
       imageCount: _product.imagePaths.length,
     );
   }
 
   List<TextEditingController> _buildDescriptionControllers({
-    required List<String> descriptions,
     required int imageCount,
   }) {
     return List<TextEditingController>.generate(
       imageCount,
       (index) => TextEditingController(
-        text: index < descriptions.length
-            ? descriptions[index]
-            : 'Auto generated description for image ${index + 1}',
+        text: 'Auto generated description for image ${index + 1}',
       ),
     );
   }
@@ -172,7 +168,6 @@ class _ProductDescriptionScreenState extends State<ProductDescriptionScreen> {
         product: _product,
         name: _nameController.text.trim(),
         imagePaths: _imagePaths,
-        imageDescriptions: descriptions,
         prompt: _promptController.text.trim(),
         tone: _toneController.text.trim().isEmpty
             ? 'neutral'
@@ -429,24 +424,35 @@ class _ImageDescriptionEditor extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+            Row(
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  File(imagePath),
-                  width: 72,
-                  height: 72,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    width: 72,
-                    height: 72,
-                    color: isDark
-                        ? AppColors.darkCardAlt
-                        : AppColors.lightCardAlt,
-                    child: const Icon(Icons.image_not_supported_rounded),
-                  ),
-                ),
+                child: imagePath.startsWith('http')
+                    ? Image.network(
+                        imagePath,
+                        width: 72,
+                        height: 72,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 72,
+                          height: 72,
+                          color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                          child: const Icon(Icons.image_not_supported_rounded),
+                        ),
+                      )
+                    : Image.file(
+                        File(imagePath),
+                        width: 72,
+                        height: 72,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 72,
+                          height: 72,
+                          color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                          child: const Icon(Icons.image_not_supported_rounded),
+                        ),
+                      ),
               ),
               const SizedBox(width: 10),
               Expanded(

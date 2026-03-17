@@ -730,12 +730,25 @@ class _ProductCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: preview != null
-                  ? Image.file(
-                      File(preview),
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                    )
+                  ? (preview.startsWith('http')
+                      ? Image.network(
+                          preview,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                            child: const Center(
+                              child: Icon(Icons.image_not_supported_rounded),
+                            ),
+                          ),
+                        )
+                      : Image.file(
+                          File(preview),
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                        ))
                   : Container(
                       color: isDark ? AppColors.darkCard : AppColors.lightCard,
                       child: const Center(

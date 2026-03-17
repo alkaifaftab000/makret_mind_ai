@@ -64,19 +64,19 @@ class BrandModel extends HiveObject {
   /// Create from JSON (for API responses)
   factory BrandModel.fromJson(Map<String, dynamic> json) {
     return BrandModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      description: json['description'] as String?,
-      targetAudience: json['targetAudience'] as String?,
-      category: json['category'] as String?,
-      imagePath: json['imagePath'] as String,
-      productions: json['productions'] as int? ?? 0,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : null,
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : null,
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      description: json['description']?.toString(), // Not standard in new API, but keep for local compatibility
+      targetAudience: json['target_audience']?.toString() ?? json['targetAudience']?.toString(),
+      category: json['category']?.toString(),
+      imagePath: json['logo']?.toString() ?? json['imagePath']?.toString() ?? '', // API uses 'logo'
+      productions: json['product_count'] as int? ?? json['productions'] as int? ?? 0, // API uses 'product_count'
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at'].toString())
+          : (json['createdAt'] != null ? DateTime.parse(json['createdAt'].toString()) : null),
+      updatedAt: json['updated_at'] != null 
+          ? DateTime.parse(json['updated_at'].toString())
+          : (json['updatedAt'] != null ? DateTime.parse(json['updatedAt'].toString()) : null),
     );
   }
 

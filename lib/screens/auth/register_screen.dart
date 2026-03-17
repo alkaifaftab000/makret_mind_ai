@@ -4,9 +4,44 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:market_mind/constants/app_colors.dart';
 import 'package:market_mind/constants/app_strings.dart';
 import 'package:market_mind/constants/app_text_styles.dart';
+import 'package:market_mind/screens/main_navigation_screen.dart';
+import 'package:market_mind/services/auth_service.dart';
+import 'package:market_mind/utils/app_notification.dart';
 
-class RegisterScreen extends StatelessWidget {
+class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
+
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  bool _isGoogleLoading = false;
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isGoogleLoading = true);
+    try {
+      final user = await authService.loginWithGoogle();
+      if (user != null && mounted) {
+        AppNotification.success(context, message: 'Welcome, ${user.name}!');
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AppNotification.error(
+          context,
+          message: e.toString().replaceAll('Exception: ', ''),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isGoogleLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,14 +130,24 @@ class RegisterScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              const Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _SocialIconButton(path: 'assets/auth/google.svg'),
-                  SizedBox(width: 16),
-                  _SocialIconButton(path: 'assets/auth/meta.svg'),
-                  SizedBox(width: 16),
-                  _SocialIconButton(path: 'assets/auth/microsoft.svg'),
+                  _SocialIconButton(
+                    path: 'assets/auth/google.svg',
+                    onPressed: _handleGoogleSignIn,
+                    isLoading: _isGoogleLoading,
+                  ),
+                  const SizedBox(width: 16),
+                  _SocialIconButton(
+                    path: 'assets/auth/meta.svg',
+                    onPressed: () {},
+                  ),
+                  const SizedBox(width: 16),
+                  _SocialIconButton(
+                    path: 'assets/auth/microsoft.svg',
+                    onPressed: () {},
+                  ),
                 ],
               ),
               const SizedBox(height: 18),
@@ -170,8 +215,14 @@ class _AuthField extends StatelessWidget {
 
 class _SocialIconButton extends StatelessWidget {
   final String path;
+  final VoidCallback? onPressed;
+  final bool isLoading;
 
-  const _SocialIconButton({required this.path});
+  const _SocialIconButton({
+    required this.path,
+    this.onPressed,
+    this.isLoading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -184,10 +235,15 @@ class _SocialIconButton extends StatelessWidget {
         color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
         borderRadius: BorderRadius.circular(14),
       ),
-      child: IconButton(
-        onPressed: () {},
-        icon: SvgPicture.asset(path, width: 22, height: 22),
-      ),
+      child: isLoading
+          ? const Padding(
+              padding: EdgeInsets.all(14.0),
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : IconButton(
+              onPressed: onPressed,
+              icon: SvgPicture.asset(path, width: 22, height: 22),
+            ),
     );
   }
 }

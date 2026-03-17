@@ -5,6 +5,8 @@ import 'package:market_mind/constants/app_strings.dart';
 import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/services/brand_service.dart';
 import 'package:market_mind/services/product_service.dart';
+import 'package:market_mind/services/user_service.dart';
+import 'package:market_mind/models/user_model.dart';
 import 'package:market_mind/screens/profile/modals/account_modal.dart';
 import 'package:market_mind/screens/profile/modals/settings_modal.dart';
 import 'package:market_mind/screens/profile/modals/about_modal.dart';
@@ -19,6 +21,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<Map<String, dynamic>> _profileStats;
+  UserModel? _currentUser;
 
   @override
   void initState() {
@@ -27,6 +30,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<Map<String, dynamic>> _loadStats() async {
+    try {
+      _currentUser = await userService.getCurrentUser();
+    } catch (e) {
+      // If user fetch fails, we can fall back to authService currentUser or null
+      _currentUser = null;
+    }
+
     final brands = await brandService.getAllBrands();
     final allProducts = await productService.getAllProducts();
 
@@ -130,7 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   height: screenSize.width * 0.25,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
+                      colors: const [
                         AppColors.buttonPrimary,
                         AppColors.buttonSecondary,
                       ],
@@ -146,22 +156,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ],
                   ),
-                  child: Icon(
-                    Icons.person_rounded,
-                    size: screenSize.width * 0.12,
-                    color: Colors.white,
-                  ),
+                  clipBehavior: Clip.hardEdge,
+                  child: _currentUser?.avatar != null && _currentUser!.avatar!.isNotEmpty
+                      ? Image.network(
+                          _currentUser!.avatar!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.person_rounded,
+                            size: screenSize.width * 0.12,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Icon(
+                          Icons.person_rounded,
+                          size: screenSize.width * 0.12,
+                          color: Colors.white,
+                        ),
                 ),
                 const SizedBox(height: 18),
 
                 // Name and Profession
                 Text(
-                  AppStrings.marketMindUser,
+                  _currentUser?.name ?? AppStrings.marketMindUser,
                   style: AppTextStyles.titleMedium(isDark),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  AppStrings.contentCreator,
+                  _currentUser?.email ?? AppStrings.contentCreator,
                   style: AppTextStyles.bodySmall(isDark),
                 ),
                 const SizedBox(height: 28),

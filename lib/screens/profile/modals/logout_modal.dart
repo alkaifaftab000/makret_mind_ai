@@ -5,21 +5,31 @@ import 'package:market_mind/constants/app_strings.dart';
 import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/screens/onboarding/onboarding_screen.dart';
 import 'package:market_mind/utils/app_notification.dart';
+import 'package:market_mind/services/auth_service.dart';
+import 'package:market_mind/services/user_service.dart';
 
 class LogoutModal extends StatelessWidget {
   const LogoutModal({super.key});
 
-  void _performLogout(BuildContext context) {
-    AppNotification.success(context, message: 'Logged out successfully');
-
-    Future.delayed(const Duration(milliseconds: 1200), () async {
+  void _performLogout(BuildContext context) async {
+    try {
+      await authService.logOut();
       if (!context.mounted) return;
-      // ignore: use_build_context_synchronously
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-        (route) => false,
-      );
-    });
+      
+      AppNotification.success(context, message: 'Logged out successfully');
+
+      Future.delayed(const Duration(milliseconds: 1200), () {
+        if (!context.mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+          (route) => false,
+        );
+      });
+    } catch (e) {
+      if (context.mounted) {
+        AppNotification.error(context, message: 'Failed to logout');
+      }
+    }
   }
 
   void _showLogoutConfirmation(BuildContext context) {
@@ -52,6 +62,62 @@ class LogoutModal extends StatelessWidget {
             },
             child: Text(
               AppStrings.logout,
+              style: GoogleFonts.poppins(
+                color: Colors.red,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountConfirmation(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? AppColors.darkCard : Colors.white,
+        title: Text(
+          'Delete Account',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'Are you sure you want to permanently delete your account and all associated data? This action cannot be undone.',
+          style: GoogleFonts.poppins(fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              AppStrings.cancel,
+              style: GoogleFonts.poppins(color: AppColors.buttonPrimary),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // close dialog
+              try {
+                await userService.deleteCurrentUser();
+                await authService.logOut();
+                
+                if (context.mounted) {
+                  AppNotification.success(context, message: 'Account deleted successfully');
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+                    (route) => false,
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  AppNotification.error(context, message: 'Failed to delete account');
+                }
+              }
+            },
+            child: Text(
+              'Delete',
               style: GoogleFonts.poppins(
                 color: Colors.red,
                 fontWeight: FontWeight.w600,
@@ -153,6 +219,29 @@ class LogoutModal extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Delete Account Button
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => _showDeleteAccountConfirmation(context),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  'Delete Account',
+                  style: GoogleFonts.poppins(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ),

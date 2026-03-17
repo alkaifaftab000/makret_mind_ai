@@ -352,6 +352,25 @@ class _BrandCard extends StatelessWidget {
   }
 
   Widget _buildBrandImage() {
+    if (brand.imagePath.startsWith('http')) {
+      return Image.network(
+        brand.imagePath,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          color: Colors.grey.shade300,
+          child: Center(
+            child: Icon(
+              Icons.image_not_supported_rounded,
+              size: 48,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ),
+      );
+    }
+    
     final imageFile = ImageUtils.loadImage(brand.imagePath);
     if (imageFile != null && imageFile.existsSync()) {
       return Image.file(
