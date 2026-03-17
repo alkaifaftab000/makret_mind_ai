@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:market_mind/models/product_model.dart';
 import 'package:market_mind/services/auth_service.dart';
-import 'dart:io';
 
 class ProductService {
   final Dio _dio = authService.dioClient;
@@ -15,7 +14,9 @@ class ProductService {
       final response = await _dio.get('/api/products/brand/$brandId');
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        return data.map((e) => ProductModel.fromJson(e as Map<String, dynamic>)).toList()
+        return data
+            .map((e) => ProductModel.fromJson(e as Map<String, dynamic>))
+            .toList()
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
       }
       return [];
@@ -52,10 +53,7 @@ class ProductService {
     for (var path in imagePaths) {
       if (!path.startsWith('http')) {
         formData.files.add(
-          MapEntry(
-            'images',
-            await MultipartFile.fromFile(path),
-          ),
+          MapEntry('images', await MultipartFile.fromFile(path)),
         );
       }
     }
@@ -112,7 +110,7 @@ class ProductService {
             'aspectRatio': customAspectRatio ?? aspectRatio,
             'duration': videoLength,
             'userPrompt': prompt,
-          }
+          },
         },
       );
       if (response.statusCode == 200) {
@@ -134,7 +132,9 @@ class ProductService {
       final response = await _dio.get('/api/products');
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        return data.map((e) => ProductModel.fromJson(e as Map<String, dynamic>)).toList()
+        return data
+            .map((e) => ProductModel.fromJson(e as Map<String, dynamic>))
+            .toList()
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
       }
       return [];

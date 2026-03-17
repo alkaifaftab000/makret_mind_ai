@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:market_mind/models/brand_model.dart';
 import 'package:market_mind/services/product_service.dart';
-import 'package:market_mind/services/brand_service.dart';
 import 'package:market_mind/screens/splash/splash_screen.dart';
 import 'package:market_mind/theme/app_theme.dart';
 
