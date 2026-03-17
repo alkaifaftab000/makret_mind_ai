@@ -4,6 +4,9 @@ import 'package:market_mind/constants/app_colors.dart';
 import 'package:market_mind/constants/app_strings.dart';
 import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/utils/app_notification.dart';
+import 'package:market_mind/services/user_service.dart';
+import 'package:market_mind/services/auth_service.dart';
+import 'package:market_mind/screens/auth/login_screen.dart';
 
 class SettingsModal extends StatefulWidget {
   const SettingsModal({super.key});
@@ -129,6 +132,16 @@ class _SettingsModalState extends State<SettingsModal> {
                 _showClearCacheDialog(isDark);
               },
             ),
+            const SizedBox(height: 10),
+            _buildActionTile(
+              isDark,
+              icon: Icons.person_remove_rounded,
+              title: 'Delete Account',
+              color: Colors.red,
+              onTap: () {
+                _showDeleteAccountDialog(isDark);
+              },
+            ),
           ],
         ),
       ),
@@ -205,7 +218,11 @@ class _SettingsModalState extends State<SettingsModal> {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    Color? color,
   }) {
+    final activeColor = color ?? AppColors.buttonPrimary;
+    final textColor = color ?? (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -220,10 +237,10 @@ class _SettingsModalState extends State<SettingsModal> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.buttonPrimary.withValues(alpha: 0.1),
+                color: activeColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, color: AppColors.buttonPrimary, size: 18),
+              child: Icon(icon, color: activeColor, size: 18),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -232,9 +249,7 @@ class _SettingsModalState extends State<SettingsModal> {
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isDark
-                      ? AppColors.textPrimaryDark
-                      : AppColors.textPrimaryLight,
+                  color: textColor,
                 ),
               ),
             ),
@@ -280,6 +295,66 @@ class _SettingsModalState extends State<SettingsModal> {
             child: Text(
               AppStrings.clearCache,
               style: GoogleFonts.poppins(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  void _showDeleteAccountDialog(bool isDark) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? AppColors.darkCard : Colors.white,
+        title: Text(
+          'Delete Account',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: Colors.red),
+        ),
+        content: Text(
+          'This action is irreversible. All your brands, products, and data will be permanently deleted.',
+          style: GoogleFonts.poppins(fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              AppStrings.cancel,
+              style: GoogleFonts.poppins(color: AppColors.textSecondaryDark),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // close dialog
+              
+              // Show loading overlay
+              showDialog(
+                context: this.context,
+                barrierDismissible: false,
+                builder: (_) => const Center(child: CircularProgressIndicator()),
+              );
+
+              try {
+                final message = await userService.deleteCurrentUser();
+                await authService.logOut();
+                
+                if (!mounted) return;
+                Navigator.of(this.context, rootNavigator: true).pop(); // close loading
+                AppNotification.success(this.context, message: message);
+                
+                Navigator.pushAndRemoveUntil(
+                  this.context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              } catch (e) {
+                if (!mounted) return;
+                Navigator.of(this.context, rootNavigator: true).pop(); // close loading
+                AppNotification.error(this.context, message: 'Failed to delete account.');
+              }
+            },
+            child: Text(
+              'Delete Forever',
+              style: GoogleFonts.poppins(color: Colors.red, fontWeight: FontWeight.w700),
             ),
           ),
         ],

@@ -54,13 +54,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     };
   }
 
-  void _showAccountModal() {
-    showModalBottomSheet(
+  Future<void> _showAccountModal() async {
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const AccountModal(),
     );
+    
+    // Refresh user data globally on close
+    if (mounted) {
+      setState(() {
+        _profileStats = _loadStats();
+      });
+    }
   }
 
   void _showSettingsModal() {

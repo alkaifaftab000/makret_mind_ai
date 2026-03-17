@@ -42,6 +42,11 @@ class AuthService {
   UserModel? _currentUser;
   UserModel? get currentUser => _currentUser;
 
+  /// Update the local user model state (e.g. after a profile edit)
+  void updateLocalUser(UserModel updatedUser) {
+    _currentUser = updatedUser;
+  }
+
   /// Authenticate with Google
   /// Throws an exception if an error occurs so the UI can display it
   Future<UserModel?> loginWithGoogle() async {

@@ -58,6 +58,7 @@ class UserService {
 
       if (response.statusCode == 200) {
         final userData = UserModel.fromJson(response.data);
+        authService.updateLocalUser(userData);
         _logger.i('User profile updated successfully.');
         return userData;
       } else {

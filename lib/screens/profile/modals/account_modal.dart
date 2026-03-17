@@ -55,17 +55,8 @@ class _AccountModalState extends State<AccountModal> {
 
   Future<void> _saveProfile() async {
     try {
-      String? avatarUrl;
-      if (_profileImagePath != null) {
-        avatarUrl = await cloudinaryService.uploadImage(
-          File(_profileImagePath!),
-          folder: 'avatars',
-        );
-      }
-
       await userService.updateCurrentUser(
         name: _nameController.text.trim(),
-        avatar: avatarUrl,
       );
 
       if (mounted) {
@@ -140,7 +131,22 @@ class _AccountModalState extends State<AccountModal> {
     setState(() {
       _profileImagePath = imagePath;
     });
-    AppNotification.success(context, message: 'Profile photo updated');
+    
+    AppNotification.info(context, message: 'Uploading profile photo...');
+    try {
+      final avatarUrl = await cloudinaryService.uploadImage(
+        File(imagePath),
+        folder: 'avatars',
+      );
+      await userService.updateCurrentUser(avatar: avatarUrl);
+      if (mounted) {
+        AppNotification.success(context, message: 'Profile photo updated successfully!');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppNotification.error(context, message: 'Failed to upload photo');
+      }
+    }
   }
 
   @override
@@ -203,8 +209,10 @@ class _AccountModalState extends State<AccountModal> {
                             : AppColors.lightCard,
                         backgroundImage: _profileImagePath != null
                             ? FileImage(File(_profileImagePath!))
-                            : null,
-                        child: _profileImagePath == null
+                            : (authService.currentUser?.avatar != null && authService.currentUser!.avatar!.isNotEmpty)
+                                ? NetworkImage(authService.currentUser!.avatar!) as ImageProvider
+                                : null,
+                        child: _profileImagePath == null && (authService.currentUser?.avatar == null || authService.currentUser!.avatar!.isEmpty)
                             ? Icon(
                                 Icons.person_rounded,
                                 size: 42,
