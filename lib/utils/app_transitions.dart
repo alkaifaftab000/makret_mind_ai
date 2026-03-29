@@ -69,7 +69,7 @@ class FadeRoute<T> extends PageRouteBuilder<T> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AnimatedTabSwitcher — Smooth fade+slide for tab body transitions
+// AnimatedTabSwitcher — Directional horizontal slide for tab body transitions
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AnimatedTabSwitcher extends StatefulWidget {
@@ -90,25 +90,54 @@ class _AnimatedTabSwitcherState extends State<AnimatedTabSwitcher>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _opacity;
-  late Animation<Offset> _slide;
+  late Animation<Offset> _slideIn;
+
+  int _previousIndex = 0;
+  late Widget _currentChild;
 
   @override
   void initState() {
     super.initState();
+    _currentChild = widget.child;
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 280),
+      // Slower = more "movement" feel, like swiping between app pages
+      duration: const Duration(milliseconds: 420),
     );
-    _opacity = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
-    _slide = Tween<Offset>(begin: const Offset(0, 0.035), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _setupAnimations(fromRight: true);
     _controller.forward();
+  }
+
+  void _setupAnimations({required bool fromRight}) {
+    final double direction = fromRight ? 1.0 : -1.0;
+
+    // New screen enters from direction we're going
+    _slideIn = Tween<Offset>(
+      begin: Offset(direction * 0.30, 0), // 30% of width horizontal travel
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutQuart, // Decelerates naturally
+    ));
+
+    // Fade in happens slightly faster than slide to feel snappy
+    _opacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.65, curve: Curves.easeOut),
+      ),
+    );
   }
 
   @override
   void didUpdateWidget(AnimatedTabSwitcher oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.index != widget.index) {
+      final bool goingRight = widget.index > _previousIndex;
+      _previousIndex = oldWidget.index;
+      _currentChild = widget.child;
+
+      _setupAnimations(fromRight: goingRight);
       _controller.forward(from: 0);
     }
   }
@@ -123,7 +152,7 @@ class _AnimatedTabSwitcherState extends State<AnimatedTabSwitcher>
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: _opacity,
-      child: SlideTransition(position: _slide, child: widget.child),
+      child: SlideTransition(position: _slideIn, child: _currentChild),
     );
   }
 }
