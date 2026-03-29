@@ -108,15 +108,15 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Text(
                 AppStrings.homeTitle,
-                style: AppTextStyles.pageHeading(isDark),
+                style: AppTextStyles.pageHeading(context, isDark),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _searchController,
-                style: AppTextStyles.fieldText(isDark),
+                style: AppTextStyles.fieldText(context, isDark),
                 decoration: InputDecoration(
                   hintText: AppStrings.searchBrandsHint,
-                  hintStyle: AppTextStyles.fieldHint(isDark),
+                  hintStyle: AppTextStyles.fieldHint(context, isDark),
                   prefixIcon: const Icon(Icons.search_rounded),
                   filled: true,
                   fillColor: isDark ? AppColors.darkCard : AppColors.lightCard,
@@ -154,12 +154,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(height: 20),
                             Text(
                               AppStrings.noBrandsYet,
-                              style: AppTextStyles.titleMedium(isDark),
+                              style: AppTextStyles.titleMedium(context, isDark),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               AppStrings.noBrandsSubtitle,
-                              style: AppTextStyles.bodySmall(isDark),
+                              style: AppTextStyles.bodySmall(context, isDark),
                             ),
                           ],
                         ),
@@ -334,7 +334,7 @@ class _BrandCard extends StatelessWidget {
         errorBuilder: (context, error, stackTrace) => _buildImageFallback(),
       );
     }
-    
+
     final imageFile = ImageUtils.loadImage(brand.imagePath);
     if (imageFile != null && imageFile.existsSync()) {
       return Image.file(
@@ -684,10 +684,10 @@ class _FormField extends StatelessWidget {
           controller: controller,
           maxLines: maxLines,
           minLines: maxLines == 1 ? 1 : 3,
-          style: AppTextStyles.fieldText(isDark),
+          style: AppTextStyles.fieldText(context, isDark),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: AppTextStyles.fieldHint(isDark),
+            hintStyle: AppTextStyles.fieldHint(context, isDark),
             filled: true,
             fillColor: isDark ? AppColors.darkCard : AppColors.lightCard,
             border: OutlineInputBorder(

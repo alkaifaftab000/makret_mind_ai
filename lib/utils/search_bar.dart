@@ -21,10 +21,10 @@ class AppSearchBar extends StatelessWidget {
     return TextField(
       controller: controller,
       onChanged: onChanged,
-      style: AppTextStyles.fieldText(isDark),
+      style: AppTextStyles.fieldText(context, isDark),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: AppTextStyles.fieldHint(isDark),
+        hintStyle: AppTextStyles.fieldHint(context, isDark),
         prefixIcon: const Icon(Icons.search_rounded),
         filled: true,
         fillColor: isDark ? AppColors.darkCard : AppColors.lightCard,

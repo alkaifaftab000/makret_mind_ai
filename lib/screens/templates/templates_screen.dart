@@ -192,7 +192,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
         elevation: 0,
         title: Text(
           AppStrings.templatesTitle,
-          style: AppTextStyles.screenTitle(isDark),
+          style: AppTextStyles.screenTitle(context, isDark),
         ),
       ),
       body: Column(
@@ -344,16 +344,16 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                     template.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.cardTitleOnImage,
+                    style: AppTextStyles.cardTitleOnImage(context),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     '${template.category.toUpperCase()} • ${template.config.videoLength} • ${template.config.aspectRatio}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.cardSubtitleOnImage.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
+                    style: AppTextStyles.cardSubtitleOnImage(
+                      context,
+                    ).copyWith(color: Colors.white.withValues(alpha: 0.9)),
                   ),
                 ],
               ),

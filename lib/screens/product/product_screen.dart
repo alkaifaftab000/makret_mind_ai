@@ -85,7 +85,7 @@ class _ProductScreenState extends State<ProductScreen> {
         elevation: 0,
         title: Text(
           '${widget.brand.name} Products',
-          style: AppTextStyles.sectionTitle(isDark),
+          style: AppTextStyles.sectionTitle(context, isDark),
         ),
       ),
       body: Padding(
@@ -109,7 +109,8 @@ class _ProductScreenState extends State<ProductScreen> {
                     final product = _products[index];
                     bool? changed;
 
-                    if (product.status == 'ready' || product.finalVideoUrl != null) {
+                    if (product.status == 'ready' ||
+                        product.finalVideoUrl != null) {
                       // Navigate straight to final video
                       changed = await Navigator.push<bool>(
                         context,
@@ -126,7 +127,8 @@ class _ProductScreenState extends State<ProductScreen> {
                       changed = await Navigator.push<bool>(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => ProductDescriptionScreen(product: product),
+                          builder: (_) =>
+                              ProductDescriptionScreen(product: product),
                         ),
                       );
                     }
@@ -749,24 +751,26 @@ class _ProductCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               child: preview != null
                   ? (preview.startsWith('http')
-                      ? Image.network(
-                          preview,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: double.infinity,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: isDark ? AppColors.darkCard : AppColors.lightCard,
-                            child: const Center(
-                              child: Icon(Icons.image_not_supported_rounded),
+                        ? Image.network(
+                            preview,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: isDark
+                                  ? AppColors.darkCard
+                                  : AppColors.lightCard,
+                              child: const Center(
+                                child: Icon(Icons.image_not_supported_rounded),
+                              ),
                             ),
-                          ),
-                        )
-                      : Image.file(
-                          File(preview),
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: double.infinity,
-                        ))
+                          )
+                        : Image.file(
+                            File(preview),
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ))
                   : Container(
                       color: isDark ? AppColors.darkCard : AppColors.lightCard,
                       child: const Center(
@@ -806,7 +810,7 @@ class _ProductCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '${product.type.toUpperCase()} • ${product.videoLength ?? '-'} • ${product.aspectRatio == 'custom' ? product.customAspectRatio ?? 'custom' : product.aspectRatio}',
+                    '${product.type.toUpperCase()} • ${product.videoLength ?? '-'} • ${product.aspectRatio == 'custom' ? product.customAspectRatio : product.aspectRatio}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.poppins(
@@ -852,12 +856,12 @@ class _EmptyProductsState extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             AppStrings.noProductsYet,
-            style: AppTextStyles.titleMedium(isDark),
+            style: AppTextStyles.titleMedium(context, isDark),
           ),
           const SizedBox(height: 8),
           Text(
             AppStrings.noProductsSubtitle,
-            style: AppTextStyles.bodySmall(isDark),
+            style: AppTextStyles.bodySmall(context, isDark),
           ),
         ],
       ),

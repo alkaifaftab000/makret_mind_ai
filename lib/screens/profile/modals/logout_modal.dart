@@ -15,7 +15,7 @@ class LogoutModal extends StatelessWidget {
     try {
       await authService.logOut();
       if (!context.mounted) return;
-      
+
       AppNotification.success(context, message: 'Logged out successfully');
 
       Future.delayed(const Duration(milliseconds: 1200), () {
@@ -102,9 +102,12 @@ class LogoutModal extends StatelessWidget {
               try {
                 await userService.deleteCurrentUser();
                 await authService.logOut();
-                
+
                 if (context.mounted) {
-                  AppNotification.success(context, message: 'Account deleted successfully');
+                  AppNotification.success(
+                    context,
+                    message: 'Account deleted successfully',
+                  );
                   Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (_) => const OnboardingScreen()),
                     (route) => false,
@@ -112,7 +115,10 @@ class LogoutModal extends StatelessWidget {
                 }
               } catch (e) {
                 if (context.mounted) {
-                  AppNotification.error(context, message: 'Failed to delete account');
+                  AppNotification.error(
+                    context,
+                    message: 'Failed to delete account',
+                  );
                 }
               }
             },
@@ -143,7 +149,10 @@ class LogoutModal extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(AppStrings.logout, style: AppTextStyles.sectionTitle(isDark)),
+            Text(
+              AppStrings.logout,
+              style: AppTextStyles.sectionTitle(context, isDark),
+            ),
             const SizedBox(height: 16),
 
             // Warning Message

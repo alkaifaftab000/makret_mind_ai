@@ -24,7 +24,7 @@ class AboutModal extends StatelessWidget {
           children: [
             Text(
               AppStrings.aboutMarketMind,
-              style: AppTextStyles.sectionTitle(isDark),
+              style: AppTextStyles.sectionTitle(context, isDark),
             ),
             const SizedBox(height: 4),
             Text(

@@ -25,7 +25,10 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final user = await authService.devLogin();
       if (user != null && mounted) {
-        AppNotification.success(context, message: 'Dev Login Success: Welcome back, ${user.name}!');
+        AppNotification.success(
+          context,
+          message: 'Dev Login Success: Welcome back, ${user.name}!',
+        );
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
           (route) => false,
@@ -50,7 +53,10 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final user = await authService.loginWithGoogle();
       if (user != null && mounted) {
-        AppNotification.success(context, message: 'Welcome back, ${user.name}!');
+        AppNotification.success(
+          context,
+          message: 'Welcome back, ${user.name}!',
+        );
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
           (route) => false,
@@ -99,13 +105,13 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(
                 AppStrings.loginTitle,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.authTitle(isDark),
+                style: AppTextStyles.authTitle(context, isDark),
               ),
               const SizedBox(height: 8),
               Text(
                 AppStrings.loginSubtitle,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.authSubtitle(isDark),
+                style: AppTextStyles.authSubtitle(context, isDark),
               ),
               const SizedBox(height: 18),
               const _AuthField(
@@ -141,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         )
                       : Text(
                           'Sign In (Dev Mode)',
-                          style: AppTextStyles.authButton,
+                          style: AppTextStyles.authButton(context),
                         ),
                 ),
               ),
@@ -153,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Text(
                       AppStrings.orContinue,
-                      style: AppTextStyles.smallMuted(isDark),
+                      style: AppTextStyles.smallMuted(context, isDark),
                     ),
                   ),
                   const Expanded(child: Divider(color: AppColors.divider)),
@@ -186,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Text(
                     AppStrings.noAccount,
-                    style: AppTextStyles.bodyMedium(isDark),
+                    style: AppTextStyles.bodyMedium(context, isDark),
                   ),
                   GestureDetector(
                     onTap: () {
@@ -198,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     child: Text(
                       AppStrings.register,
-                      style: AppTextStyles.bodyStrong(isDark),
+                      style: AppTextStyles.bodyStrong(context, isDark),
                     ),
                   ),
                 ],
@@ -228,12 +234,12 @@ class _AuthField extends StatelessWidget {
 
     return TextField(
       obscureText: obscure,
-      style: AppTextStyles.fieldText(isDark),
+      style: AppTextStyles.fieldText(context, isDark),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        labelStyle: AppTextStyles.fieldLabel(isDark),
-        hintStyle: AppTextStyles.fieldHint(isDark),
+        labelStyle: AppTextStyles.fieldLabel(context, isDark),
+        hintStyle: AppTextStyles.fieldHint(context, isDark),
         filled: true,
         fillColor: isDark ? AppColors.darkCard : AppColors.lightCard,
         contentPadding: const EdgeInsets.symmetric(

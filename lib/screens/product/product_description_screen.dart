@@ -221,7 +221,8 @@ class _ProductDescriptionScreenState extends State<ProductDescriptionScreen> {
       if (updated.scenes.isEmpty) {
         AppNotification.info(
           context,
-          message: 'Backend scenes pending. Loading mock short clips for testing.',
+          message:
+              'Backend scenes pending. Loading mock short clips for testing.',
         );
       }
 
@@ -261,7 +262,7 @@ class _ProductDescriptionScreenState extends State<ProductDescriptionScreen> {
         elevation: 0,
         title: Text(
           'Product Description',
-          style: AppTextStyles.sectionTitle(isDark),
+          style: AppTextStyles.sectionTitle(context, isDark),
         ),
       ),
       body: SingleChildScrollView(
@@ -431,7 +432,7 @@ class _ImageDescriptionEditor extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-            Row(
+          Row(
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
@@ -444,7 +445,9 @@ class _ImageDescriptionEditor extends StatelessWidget {
                         errorBuilder: (_, __, ___) => Container(
                           width: 72,
                           height: 72,
-                          color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                          color: isDark
+                              ? AppColors.darkCardAlt
+                              : AppColors.lightCardAlt,
                           child: const Icon(Icons.image_not_supported_rounded),
                         ),
                       )
@@ -456,7 +459,9 @@ class _ImageDescriptionEditor extends StatelessWidget {
                         errorBuilder: (_, __, ___) => Container(
                           width: 72,
                           height: 72,
-                          color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+                          color: isDark
+                              ? AppColors.darkCardAlt
+                              : AppColors.lightCardAlt,
                           child: const Icon(Icons.image_not_supported_rounded),
                         ),
                       ),

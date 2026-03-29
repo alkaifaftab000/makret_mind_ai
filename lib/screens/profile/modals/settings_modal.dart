@@ -37,12 +37,12 @@ class _SettingsModalState extends State<SettingsModal> {
           children: [
             Text(
               AppStrings.settings,
-              style: AppTextStyles.sectionTitle(isDark),
+              style: AppTextStyles.sectionTitle(context, isDark),
             ),
             const SizedBox(height: 20),
 
             // Display Settings
-            _buildSectionHeader(isDark, AppStrings.display),
+            _buildSectionHeader(context, isDark, AppStrings.display),
             const SizedBox(height: 12),
             _buildSettingsTile(
               isDark,
@@ -64,7 +64,7 @@ class _SettingsModalState extends State<SettingsModal> {
             const SizedBox(height: 20),
 
             // Notifications
-            _buildSectionHeader(isDark, AppStrings.notifications),
+            _buildSectionHeader(context, isDark, AppStrings.notifications),
             const SizedBox(height: 12),
             _buildSettingsTile(
               isDark,
@@ -110,7 +110,7 @@ class _SettingsModalState extends State<SettingsModal> {
             const SizedBox(height: 20),
 
             // Data Options
-            _buildSectionHeader(isDark, AppStrings.dataPrivacy),
+            _buildSectionHeader(context, isDark, AppStrings.dataPrivacy),
             const SizedBox(height: 12),
             _buildActionTile(
               isDark,
@@ -148,10 +148,10 @@ class _SettingsModalState extends State<SettingsModal> {
     );
   }
 
-  Widget _buildSectionHeader(bool isDark, String title) {
+  Widget _buildSectionHeader(BuildContext context, bool isDark, String title) {
     return Text(
       title,
-      style: AppTextStyles.bodyStrong(isDark).copyWith(fontSize: 13),
+      style: AppTextStyles.bodyStrong(context, isDark).copyWith(fontSize: 13),
     );
   }
 
@@ -221,7 +221,9 @@ class _SettingsModalState extends State<SettingsModal> {
     Color? color,
   }) {
     final activeColor = color ?? AppColors.buttonPrimary;
-    final textColor = color ?? (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight);
+    final textColor =
+        color ??
+        (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight);
 
     return GestureDetector(
       onTap: onTap,
@@ -301,6 +303,7 @@ class _SettingsModalState extends State<SettingsModal> {
       ),
     );
   }
+
   void _showDeleteAccountDialog(bool isDark) {
     showDialog(
       context: context,
@@ -308,7 +311,10 @@ class _SettingsModalState extends State<SettingsModal> {
         backgroundColor: isDark ? AppColors.darkCard : Colors.white,
         title: Text(
           'Delete Account',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: Colors.red),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w700,
+            color: Colors.red,
+          ),
         ),
         content: Text(
           'This action is irreversible. All your brands, products, and data will be permanently deleted.',
@@ -325,22 +331,26 @@ class _SettingsModalState extends State<SettingsModal> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context); // close dialog
-              
+
               // Show loading overlay
               showDialog(
                 context: this.context,
                 barrierDismissible: false,
-                builder: (_) => const Center(child: CircularProgressIndicator()),
+                builder: (_) =>
+                    const Center(child: CircularProgressIndicator()),
               );
 
               try {
                 final message = await userService.deleteCurrentUser();
                 await authService.logOut();
-                
+
                 if (!mounted) return;
-                Navigator.of(this.context, rootNavigator: true).pop(); // close loading
+                Navigator.of(
+                  this.context,
+                  rootNavigator: true,
+                ).pop(); // close loading
                 AppNotification.success(this.context, message: message);
-                
+
                 Navigator.pushAndRemoveUntil(
                   this.context,
                   MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -348,13 +358,22 @@ class _SettingsModalState extends State<SettingsModal> {
                 );
               } catch (e) {
                 if (!mounted) return;
-                Navigator.of(this.context, rootNavigator: true).pop(); // close loading
-                AppNotification.error(this.context, message: 'Failed to delete account.');
+                Navigator.of(
+                  this.context,
+                  rootNavigator: true,
+                ).pop(); // close loading
+                AppNotification.error(
+                  this.context,
+                  message: 'Failed to delete account.',
+                );
               }
             },
             child: Text(
               'Delete Forever',
-              style: GoogleFonts.poppins(color: Colors.red, fontWeight: FontWeight.w700),
+              style: GoogleFonts.poppins(
+                color: Colors.red,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],

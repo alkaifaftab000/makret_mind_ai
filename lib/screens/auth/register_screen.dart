@@ -72,13 +72,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Text(
                 AppStrings.registerTitle,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.authTitle(isDark),
+                style: AppTextStyles.authTitle(context, isDark),
               ),
               const SizedBox(height: 8),
               Text(
                 AppStrings.registerSubtitle,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.authSubtitle(isDark),
+                style: AppTextStyles.authSubtitle(context, isDark),
               ),
               const SizedBox(height: 18),
               const _AuthField(
@@ -111,7 +111,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   child: Text(
                     AppStrings.register,
-                    style: AppTextStyles.authButton,
+                    style: AppTextStyles.authButton(context),
                   ),
                 ),
               ),
@@ -123,7 +123,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Text(
                       AppStrings.orContinue,
-                      style: AppTextStyles.smallMuted(isDark),
+                      style: AppTextStyles.smallMuted(context, isDark),
                     ),
                   ),
                   const Expanded(child: Divider(color: AppColors.divider)),
@@ -156,13 +156,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   Text(
                     AppStrings.alreadyHaveAccount,
-                    style: AppTextStyles.bodyMedium(isDark),
+                    style: AppTextStyles.bodyMedium(context, isDark),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
                     child: Text(
                       AppStrings.signIn,
-                      style: AppTextStyles.bodyStrong(isDark),
+                      style: AppTextStyles.bodyStrong(context, isDark),
                     ),
                   ),
                 ],
@@ -192,12 +192,12 @@ class _AuthField extends StatelessWidget {
 
     return TextField(
       obscureText: obscure,
-      style: AppTextStyles.fieldText(isDark),
+      style: AppTextStyles.fieldText(context, isDark),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        labelStyle: AppTextStyles.fieldLabel(isDark),
-        hintStyle: AppTextStyles.fieldHint(isDark),
+        labelStyle: AppTextStyles.fieldLabel(context, isDark),
+        hintStyle: AppTextStyles.fieldHint(context, isDark),
         filled: true,
         fillColor: isDark ? AppColors.darkCard : AppColors.lightCard,
         contentPadding: const EdgeInsets.symmetric(

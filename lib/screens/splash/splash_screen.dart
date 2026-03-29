@@ -62,7 +62,7 @@ class _SplashScreenState extends State<SplashScreen> {
               child: Text(
                 AppStrings.appName,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.splashTitle(isDark),
+                style: AppTextStyles.splashTitle(context, isDark),
               ),
             ),
           ),
@@ -72,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen> {
             right: 0,
             child: Center(
               child: DefaultTextStyle(
-                style: AppTextStyles.splashAnimated(isDark),
+                style: AppTextStyles.splashAnimated(context, isDark),
                 child: AnimatedTextKit(
                   repeatForever: true,
                   pause: const Duration(seconds: 1),
@@ -108,7 +108,7 @@ class _SplashScreenState extends State<SplashScreen> {
                         child: Text(
                           AppStrings.splashTagline,
                           textAlign: TextAlign.center,
-                          style: AppTextStyles.splashTagline(isDark),
+                          style: AppTextStyles.splashTagline(context, isDark),
                         ),
                       ),
                       SizedBox(height: screenSize.height * .03),
@@ -130,7 +130,7 @@ class _SplashScreenState extends State<SplashScreen> {
               child: Text(
                 AppStrings.footer,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.footer(isDark),
+                style: AppTextStyles.footer(context, isDark),
               ),
             ),
           ),

@@ -73,7 +73,8 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
       index,
     ) {
       final source = _dummyShortAssets[index % _dummyShortAssets.length];
-      final imageDescription = 'Auto generated description for image ${index + 1}';
+      final imageDescription =
+          'Auto generated description for image ${index + 1}';
 
       return _GeneratedClip(
         id: 'clip_$index',
@@ -285,7 +286,8 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
     // Show a quick warning that it's mocked, since real backend video gen is pending
     AppNotification.info(
       context,
-      message: 'Triggering local mock render. Real backend pipeline not yet connected.',
+      message:
+          'Triggering local mock render. Real backend pipeline not yet connected.',
     );
 
     _showLoadingDialog('Making final video...');
@@ -404,7 +406,7 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
           _isFinalReady
               ? AppStrings.finalVideoTitle
               : AppStrings.generatedShortClipsTitle,
-          style: AppTextStyles.screenTitle(isDark),
+          style: AppTextStyles.screenTitle(context, isDark),
         ),
       ),
       body: Padding(
@@ -421,7 +423,7 @@ class _ProductGenerationScreenState extends State<ProductGenerationScreen> {
       children: [
         Text(
           AppStrings.reviewClipsHint,
-          style: AppTextStyles.bodySmall(isDark),
+          style: AppTextStyles.bodySmall(context, isDark),
         ),
         const SizedBox(height: 10),
         Expanded(

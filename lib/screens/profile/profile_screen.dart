@@ -61,7 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => const AccountModal(),
     );
-    
+
     // Refresh user data globally on close
     if (mounted) {
       setState(() {
@@ -113,7 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         elevation: 0,
         title: Text(
           AppStrings.profileTitle,
-          style: AppTextStyles.screenTitle(isDark),
+          style: AppTextStyles.screenTitle(context, isDark),
         ),
       ),
       body: FutureBuilder<Map<String, dynamic>>(
@@ -127,7 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             return Center(
               child: Text(
                 'Unable to load profile',
-                style: AppTextStyles.bodyMedium(isDark),
+                style: AppTextStyles.bodyMedium(context, isDark),
               ),
             );
           }
@@ -164,7 +164,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                   clipBehavior: Clip.hardEdge,
-                  child: _currentUser?.avatar != null && _currentUser!.avatar!.isNotEmpty
+                  child:
+                      _currentUser?.avatar != null &&
+                          _currentUser!.avatar!.isNotEmpty
                       ? Image.network(
                           _currentUser!.avatar!,
                           fit: BoxFit.cover,
@@ -185,12 +187,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // Name and Profession
                 Text(
                   _currentUser?.name ?? AppStrings.marketMindUser,
-                  style: AppTextStyles.titleMedium(isDark),
+                  style: AppTextStyles.titleMedium(context, isDark),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   _currentUser?.email ?? AppStrings.contentCreator,
-                  style: AppTextStyles.bodySmall(isDark),
+                  style: AppTextStyles.bodySmall(context, isDark),
                 ),
                 const SizedBox(height: 28),
 

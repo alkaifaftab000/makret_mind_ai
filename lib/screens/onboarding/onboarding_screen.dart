@@ -17,9 +17,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _currentIndex = 0;
 
   @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+  }
+
+  void _nextPage() {
+    if (_currentIndex < AppStrings.onboardingItems.length - 1) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
+    }
+  }
+
+  void _onSkip() {
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
   }
 
   void _goToPage(int index) {
@@ -30,19 +48,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  void _onNext() {
-    if (_currentIndex < AppStrings.onboardingItems.length - 1) {
-      _goToPage(_currentIndex + 1);
-      return;
-    }
-
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
-  }
-
-  void _onSkip() {
-    _goToPage(AppStrings.onboardingItems.length - 1);
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -55,93 +64,155 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ? AppColors.darkBackground
           : AppColors.lightBackground,
       body: SafeArea(
-        child: PageView.builder(
-          controller: _pageController,
-          itemCount: AppStrings.onboardingItems.length,
-          onPageChanged: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          itemBuilder: (context, index) {
-            final item = AppStrings.onboardingItems[index];
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(
-                    height: size.height * 0.70,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(36),
-                      child: Image.asset(item.imagePath, fit: BoxFit.cover),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    item.title,
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.authTitle(
-                      isDark,
-                    ).copyWith(fontSize: 24),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    item.description,
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.authSubtitle(isDark),
-                  ),
-                  const Spacer(),
-                  Row(
+        child: Stack(
+          children: [
+            PageView.builder(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              itemCount: AppStrings.onboardingItems.length,
+              itemBuilder: (context, index) {
+                final item = AppStrings.onboardingItems[index];
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: _onSkip,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.buttonSecondary,
-                              foregroundColor: AppColors.buttonText,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            child: Text(
-                              AppStrings.onboardingSkip,
-                              style: AppTextStyles.authButton,
-                            ),
+                      // Image - 70% of available height
+                      SizedBox(
+                        height: size.height * 0.70,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(36),
+                          child: Image.asset(
+                            item.imagePath,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey[800],
+                                child: const Center(
+                                  child: Text(
+                                    'Image not found',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: SizedBox(
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: _onNext,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.buttonPrimary,
-                              foregroundColor: AppColors.buttonText,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            child: Text(
-                              _currentIndex ==
-                                      AppStrings.onboardingItems.length - 1
-                                  ? AppStrings.onboardingDone
-                                  : AppStrings.onboardingNext,
-                              style: AppTextStyles.authButton,
-                            ),
-                          ),
-                        ),
+                      const SizedBox(height: 20),
+
+                      // Title
+                      Text(
+                        item.title,
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.authTitle(
+                          context,
+                          isDark,
+                        ).copyWith(fontSize: 24),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Description
+                      Text(
+                        item.description,
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.authSubtitle(context, isDark),
                       ),
                     ],
                   ),
-                ],
+                );
+              },
+            ),
+
+            // Skip button at top right
+            if (_currentIndex < AppStrings.onboardingItems.length - 1)
+              Positioned(
+                top: 15,
+                right: 23,
+                child: GestureDetector(
+                  onTap: _onSkip,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.darkBackground,
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    child: Text(
+                      AppStrings.onboardingSkip,
+                      style: AppTextStyles.smallMuted(context, isDark).copyWith(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            );
-          },
+
+            // Page Indicators at bottom center
+            Positioned(
+              bottom: 40,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(AppStrings.onboardingItems.length, (
+                  idx,
+                ) {
+                  bool isSelected = _currentIndex == idx;
+                  return GestureDetector(
+                    onTap: () => _goToPage(idx),
+                    child: AnimatedContainer(
+                      height: 8,
+                      width: isSelected ? 30 : 10,
+                      margin: EdgeInsets.symmetric(
+                        horizontal: isSelected ? 6 : 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.buttonPrimary.withValues(alpha: 0.8)
+                            : AppColors.buttonSecondary.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(40),
+                      ),
+                      duration: const Duration(milliseconds: 300),
+                    ),
+                  );
+                }),
+              ),
+            ),
+
+            // Get Started button at bottom (last page only)
+            if (_currentIndex == AppStrings.onboardingItems.length - 1)
+              Positioned(
+                bottom: 20,
+                right: 18,
+                left: 18,
+                child: SizedBox(
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _nextPage,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.buttonPrimary,
+                      foregroundColor: AppColors.buttonText,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      'Get Started',
+                      style: AppTextStyles.authButton(context),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

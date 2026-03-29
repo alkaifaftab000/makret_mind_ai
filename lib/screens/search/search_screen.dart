@@ -114,7 +114,7 @@ class _SearchScreenState extends State<SearchScreen> {
         elevation: 0,
         title: Text(
           AppStrings.searchTitle,
-          style: AppTextStyles.screenTitle(isDark),
+          style: AppTextStyles.screenTitle(context, isDark),
         ),
       ),
       body: SafeArea(
@@ -234,7 +234,7 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(title, style: AppTextStyles.sectionTitle(isDark));
+    return Text(title, style: AppTextStyles.sectionTitle(context, isDark));
   }
 }
 
@@ -370,7 +370,7 @@ class _BrandCard extends StatelessWidget {
         ),
       );
     }
-    
+
     final imageFile = ImageUtils.loadImage(brand.imagePath);
     if (imageFile != null && imageFile.existsSync()) {
       return Image.file(
