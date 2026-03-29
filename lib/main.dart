@@ -8,7 +8,7 @@ import 'package:market_mind/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  GoogleFonts.config.allowRuntimeFetching = false;
+// GoogleFonts.config.allowRuntimeFetching = false; // commented out to allow fetching Poppins from network on web
 
   // Initialize Hive
   await Hive.initFlutter();
@@ -22,15 +22,39 @@ void main() async {
   runApp(const MainApp());
 }
 
-class MainApp extends StatelessWidget {
+class MainApp extends StatefulWidget {
   const MainApp({super.key});
+
+  static void toggleTheme(BuildContext context) {
+    final state = context.findAncestorStateOfType<_MainAppState>();
+    state?.toggleTheme();
+  }
+
+  @override
+  State<MainApp> createState() => _MainAppState();
+}
+
+class _MainAppState extends State<MainApp> {
+  ThemeMode _themeMode = ThemeMode.system;
+
+  void toggleTheme() {
+    setState(() {
+      if (_themeMode == ThemeMode.system) {
+        final brightness = MediaQuery.of(context).platformBrightness;
+        _themeMode = brightness == Brightness.dark ? ThemeMode.light : ThemeMode.dark;
+      } else {
+        _themeMode = _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Market Mind',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: _themeMode,
       home: const SplashScreen(),
     );
   }

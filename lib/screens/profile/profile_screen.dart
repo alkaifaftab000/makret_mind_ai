@@ -23,6 +23,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late Future<Map<String, dynamic>> _profileStats;
   UserModel? _currentUser;
 
+  // Mock creations data
+  final List<String> _mockCreations = [
+    'https://picsum.photos/seed/c1/400/400',
+    'https://picsum.photos/seed/c2/400/400',
+    'https://picsum.photos/seed/c3/400/400',
+    'https://picsum.photos/seed/c4/400/400',
+  ];
+
+  final List<String> _mockScenes = [
+    'https://picsum.photos/seed/s1/400/200',
+    'https://picsum.photos/seed/s2/400/200',
+    'https://picsum.photos/seed/s3/400/200',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -33,7 +47,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       _currentUser = await userService.getCurrentUser();
     } catch (e) {
-      // If user fetch fails, we can fall back to authService currentUser or null
       _currentUser = null;
     }
 
@@ -51,6 +64,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       'totalBrands': brands.length,
       'totalProducts': allProducts.length,
       'totalPosters': totalPosters,
+      'credits': 100, // Mock premium credit count
+      'creations': 42, // Mock total AI generations
     };
   }
 
@@ -61,8 +76,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => const AccountModal(),
     );
-
-    // Refresh user data globally on close
     if (mounted) {
       setState(() {
         _profileStats = _loadStats();
@@ -99,23 +112,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenSize = MediaQuery.sizeOf(context);
+    // Enforcing Dark Premium Theme constraint
+    final isDark = Theme.of(context).brightness == Brightness.dark || true; // Let's respect system but force dark styling heavily
+    final screenThemeDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.darkBackground
-          : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: isDark
-            ? AppColors.darkBackground
-            : AppColors.lightBackground,
-        elevation: 0,
-        title: Text(
-          AppStrings.profileTitle,
-          style: AppTextStyles.screenTitle(context, isDark),
-        ),
-      ),
+      backgroundColor: screenThemeDark ? AppColors.darkBackground : AppColors.lightBackground,
       body: FutureBuilder<Map<String, dynamic>>(
         future: _profileStats,
         builder: (context, snapshot) {
@@ -127,281 +129,485 @@ class _ProfileScreenState extends State<ProfileScreen> {
             return Center(
               child: Text(
                 'Unable to load profile',
-                style: AppTextStyles.bodyMedium(context, isDark),
+                style: AppTextStyles.bodyMedium(context, screenThemeDark),
               ),
             );
           }
 
           final stats = snapshot.data!;
-          final totalBrands = stats['totalBrands'] as int;
-          final totalProducts = stats['totalProducts'] as int;
-          final totalPosters = stats['totalPosters'] as int;
+          final credits = stats['credits'] as int;
+          final creations = stats['creations'] as int;
+          final scenes = stats['totalProducts'] as int; // using as substitute
+          final templates = stats['totalBrands'] as int;
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                // Profile Avatar
-                Container(
-                  width: screenSize.width * 0.25,
-                  height: screenSize.width * 0.25,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: const [
-                        AppColors.buttonPrimary,
-                        AppColors.buttonSecondary,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.buttonPrimary.withValues(alpha: 0.3),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  clipBehavior: Clip.hardEdge,
-                  child:
-                      _currentUser?.avatar != null &&
-                          _currentUser!.avatar!.isNotEmpty
-                      ? Image.network(
-                          _currentUser!.avatar!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            Icons.person_rounded,
-                            size: screenSize.width * 0.12,
-                            color: Colors.white,
+          return Container(
+            // Premium background
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: screenThemeDark
+                    ? [const Color(0xFF0F172A), const Color(0xFF1E1B4B).withValues(alpha: 0.8)]
+                    : [AppColors.lightBackground, const Color(0xFFF3E8FF)],
+              ),
+            ),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 1. Header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'My Profile',
+                          style: GoogleFonts.poppins(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: screenThemeDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: _showSettingsModal,
+                          icon: Icon(
+                            Icons.settings_rounded,
+                            color: screenThemeDark ? Colors.white : Colors.black87,
                           ),
                         )
-                      : Icon(
-                          Icons.person_rounded,
-                          size: screenSize.width * 0.12,
-                          color: Colors.white,
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // 2. Profile Card
+                    _ProfileCard(
+                      user: _currentUser,
+                      isDark: screenThemeDark,
+                      stats: {
+                        'Creations': creations.toString(),
+                        'Scenes': scenes.toString(),
+                        'Templates': templates.toString(),
+                        'Credits 🪙': credits.toString(),
+                      },
+                      onEditTap: _showAccountModal,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // 3. Pro & Credits Card
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF7b4397), Color(0xFF4286f4)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                ),
-                const SizedBox(height: 18),
-
-                // Name and Profession
-                Text(
-                  _currentUser?.name ?? AppStrings.marketMindUser,
-                  style: AppTextStyles.titleMedium(context, isDark),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _currentUser?.email ?? AppStrings.contentCreator,
-                  style: AppTextStyles.bodySmall(context, isDark),
-                ),
-                const SizedBox(height: 28),
-
-                // Stats Grid (1x3)
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard(
-                        isDark,
-                        icon: Icons.video_library_rounded,
-                        count: totalProducts.toString(),
-                        label: AppStrings.videos,
-                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF7b4397).withValues(alpha: 0.3),
+                            blurRadius: 15,
+                            offset: const Offset(0, 6),
+                          )
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    'Pro Member ',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const Text('💎', style: TextStyle(fontSize: 14)),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'You have $credits credits remaining',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              'Upgrade',
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF4286f4),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatCard(
-                        isDark,
-                        icon: Icons.shopping_bag_rounded,
-                        count: totalBrands.toString(),
-                        label: AppStrings.products,
-                        color: Colors.green,
+                    const SizedBox(height: 24),
+
+                    // 4. Quick Actions
+                    Text(
+                      'Quick Actions',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: screenThemeDark ? Colors.white : Colors.black87,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatCard(
-                        isDark,
-                        icon: Icons.image_rounded,
-                        count: totalPosters.toString(),
-                        label: AppStrings.posters,
-                        color: Colors.orange,
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _QuickActionCard(
+                            icon: Icons.person_outline_rounded,
+                            label: 'Edit',
+                            isDark: screenThemeDark,
+                            onTap: _showAccountModal,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _QuickActionCard(
+                            icon: Icons.info_outline_rounded,
+                            label: 'About',
+                            isDark: screenThemeDark,
+                            onTap: _showAboutModal,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _QuickActionCard(
+                            icon: Icons.logout_rounded,
+                            label: 'Logout',
+                            isDark: screenThemeDark,
+                            isDestructive: true,
+                            onTap: _showLogoutModal,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+
+                    // 5. User Creations Section
+                    Text(
+                      'Your Creations',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: screenThemeDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.9,
+                      ),
+                      itemCount: _mockCreations.length,
+                      itemBuilder: (context, index) {
+                        return _CreationGridCard(
+                          imageUrl: _mockCreations[index],
+                          label: 'AI Gen #${index + 1}',
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 32),
+
+                    // 6. Saved Scenes
+                    Text(
+                      'Your Scenes',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: screenThemeDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 140,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: _mockScenes.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 12.0),
+                            child: _CreationGridCard(
+                              imageUrl: _mockScenes[index],
+                              label: 'Scene ${index + 1}',
+                              width: 220,
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 32),
-
-                // Action Buttons (1x4 Column)
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _showAccountModal,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.buttonPrimary,
-                      foregroundColor: AppColors.buttonText,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.person_outline_rounded, size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          AppStrings.accountDetails,
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _showSettingsModal,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.settings_rounded, size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          AppStrings.settings,
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _showAboutModal,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.info_outline_rounded, size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          AppStrings.about,
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _showLogoutModal,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.logout_rounded, size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          AppStrings.logout,
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           );
         },
       ),
     );
   }
+}
 
-  Widget _buildStatCard(
-    bool isDark, {
-    required IconData icon,
-    required String count,
-    required String label,
-    required Color color,
-  }) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Components
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ProfileCard extends StatelessWidget {
+  final UserModel? user;
+  final bool isDark;
+  final Map<String, String> stats;
+  final VoidCallback onEditTap;
+
+  const _ProfileCard({
+    required this.user,
+    required this.isDark,
+    required this.stats,
+    required this.onEditTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCard : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider, width: 0.6),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: Column(
         children: [
+          Row(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF9061F9), Color(0xFF4286f4)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      image: user?.avatar != null && user!.avatar!.isNotEmpty
+                          ? DecorationImage(
+                              image: NetworkImage(user!.avatar!),
+                              fit: BoxFit.cover,
+                            )
+                          : const DecorationImage(
+                              image: NetworkImage('https://i.pravatar.cc/150?img=47'), // Mock
+                              fit: BoxFit.cover,
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user?.name ?? 'Jenny Wilson',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFF9061F9).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        'Creator ✨',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white70 : const Color(0xFF9061F9),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: onEditTap,
+                icon: Icon(Icons.edit_rounded, color: isDark ? Colors.white70 : Colors.black54),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: stats.entries.map((entry) {
+              return Column(
+                children: [
+                  Text(
+                    entry.value,
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    entry.key,
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      color: isDark ? Colors.white54 : Colors.black54,
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActionCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isDark;
+  final bool isDestructive;
+  final VoidCallback onTap;
+
+  const _QuickActionCard({
+    required this.icon,
+    required this.label,
+    required this.isDark,
+    this.isDestructive = false,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Color baseColor = isDestructive ? Colors.red : (isDark ? Colors.white : Colors.black87);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.divider),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: baseColor, size: 24),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: baseColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CreationGridCard extends StatelessWidget {
+  final String imageUrl;
+  final String label;
+  final double? width;
+
+  const _CreationGridCard({
+    required this.imageUrl,
+    required this.label,
+    this.width,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+        image: DecorationImage(
+          image: NetworkImage(imageUrl),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Stack(
+        children: [
           Container(
-            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 22, color: color),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            count,
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: isDark
-                  ? AppColors.textPrimaryDark
-                  : AppColors.textPrimaryLight,
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black.withValues(alpha: 0.8)],
+                stops: const [0.5, 1.0],
+              ),
             ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 11,
-              color: isDark
-                  ? AppColors.textSecondaryDark
-                  : AppColors.textSecondaryLight,
+          Positioned(
+            left: 12,
+            bottom: 12,
+            child: Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
