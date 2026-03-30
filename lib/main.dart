@@ -5,6 +5,7 @@ import 'package:market_mind/models/brand_model.dart';
 import 'package:market_mind/services/product_service.dart';
 import 'package:market_mind/screens/splash/splash_screen.dart';
 import 'package:market_mind/theme/app_theme.dart';
+import 'package:market_mind/utils/theme_transition_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +56,12 @@ class _MainAppState extends State<MainApp> {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: _themeMode,
+      builder: (context, child) {
+        return RepaintBoundary(
+          key: ThemeTransitionService.repaintBoundaryKey,
+          child: child ?? const SizedBox(),
+        );
+      },
       home: const SplashScreen(),
     );
   }

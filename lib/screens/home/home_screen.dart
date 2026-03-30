@@ -10,11 +10,13 @@ import 'package:market_mind/screens/ai_studio/ai_studio_screen.dart';
 import 'package:market_mind/screens/brand_details/brand_details_screen.dart';
 import 'package:market_mind/screens/product/product_screen.dart';
 import 'package:market_mind/screens/poster_generator/poster_main_screen.dart';
+import 'package:market_mind/screens/video_generator/video_main_screen.dart';
 import 'package:market_mind/services/brand_service.dart';
 import 'package:market_mind/utils/app_transitions.dart';
 import 'package:market_mind/utils/app_notification.dart';
 import 'package:market_mind/utils/image_utils.dart';
 import 'package:market_mind/utils/permission_utils.dart';
+import 'package:market_mind/widgets/theme_toggle_button.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -125,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // Trending Section
                     Text(
-                      'Trending 🔥',
+                      'Trending ',
                       style: GoogleFonts.poppins(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
@@ -142,7 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          'My Brands 💼',
+                          'My Brands ',
                           style: GoogleFonts.poppins(
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
@@ -248,12 +250,12 @@ class _BentoGrid extends StatelessWidget {
               flex: 1,
               child: _DashboardCard(
                 title: 'Video Ad\nGen',
-                subtitle: 'Coming soon',
+                subtitle: 'Tap to generate',
                 icon: Icons.video_camera_back_rounded,
                 gradientColors: const [Color(0xFFe96c8a), Color(0xFFdc2430)], // Pink/Red
                 height: 125, // Increased height to prevent pixel overflow
                 bgImage: 'https://picsum.photos/seed/videoad/300/300',
-                onTap: () {}, // Dummy
+                onTap: () => Navigator.push(context, FadeSlideRoute(page: VideoMainScreen())),
               ),
             ),
             const SizedBox(width: 16),
@@ -344,7 +346,7 @@ class _DashboardCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -363,8 +365,10 @@ class _DashboardCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.poppins(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
                           height: 1.1,
@@ -373,8 +377,10 @@ class _DashboardCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.poppins(
-                          fontSize: 11,
+                          fontSize: 9,
                           color: Colors.white.withValues(alpha: 0.85),
                         ),
                       ),
@@ -506,6 +512,9 @@ class _HomeHeader extends StatelessWidget {
           ],
         ),
         const Spacer(),
+        // Theme Toggle Button
+        const ThemeToggleButton(),
+        const SizedBox(width: 8),
         // Notification bell
         Container(
           padding: const EdgeInsets.all(8),

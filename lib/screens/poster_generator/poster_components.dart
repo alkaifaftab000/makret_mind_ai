@@ -1,6 +1,24 @@
 import 'package:flutter/material.dart';
 
 class PosterComponents {
+  static Widget gradientBackground({required Widget child}) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF330404), // Dark deep red
+            Color(0xFFE55D13), // Vibrant orange
+            Color(0xFF8A1E00), // Middle warm red
+          ],
+          stops: [0.0, 0.7, 1.0],
+        ),
+      ),
+      child: child,
+    );
+  }
+
   static Widget templateCard({
     required String title,
     required String previewUrl,

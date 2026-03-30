@@ -94,7 +94,7 @@ class PosterMainScreen extends StatelessWidget {
                                     Navigator.push(
                                       context,
                                       PageRouteBuilder(
-                                        pageBuilder: (context, animation, secondaryAnimation) => const PosterTemplatePreviewScreen(),
+                                        pageBuilder: (context, animation, secondaryAnimation) => PosterTemplatePreviewScreen(),
                                         transitionsBuilder: (context, animation, secondaryAnimation, child) {
                                           return FadeTransition(opacity: animation, child: SlideTransition(
                                             position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(animation),
@@ -177,7 +177,7 @@ class PosterMainScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (context, animation, secondaryAnimation) => const PosterTemplatePreviewScreen(),
+                          pageBuilder: (context, animation, secondaryAnimation) => PosterTemplatePreviewScreen(),
                           transitionsBuilder: (context, animation, secondaryAnimation, child) {
                             return FadeTransition(
                               opacity: animation,

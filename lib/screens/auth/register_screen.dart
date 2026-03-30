@@ -1,5 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:market_mind/constants/app_colors.dart';
 import 'package:market_mind/constants/app_strings.dart';
@@ -15,8 +17,34 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStateMixin {
   bool _isGoogleLoading = false;
+  bool _showPassword = false;
+  bool _showConfirmPassword = false;
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 700),
+      vsync: this,
+    );
+    _fadeController.forward();
+    _slideController.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
+    super.dispose();
+  }
 
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isGoogleLoading = true);
@@ -46,128 +74,578 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.darkBackground
-          : AppColors.lightBackground,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(
-                height: size.height * 0.34,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(34),
-                  child: Image.asset(
-                    'assets/auth/register.png',
-                    fit: BoxFit.cover,
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Gradient Background
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF1a0033).withOpacity(0.95),
+                  const Color(0xFF0a2463).withOpacity(0.95),
+                  const Color(0xFF247ba0).withOpacity(0.95),
+                  const Color(0xFF6c3a8c).withOpacity(0.95),
+                ],
+                stops: const [0.0, 0.35, 0.65, 1.0],
+              ),
+            ),
+          ),
+
+          // Glow effect
+          Positioned(
+            top: -100,
+            right: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.purpleAccent.withOpacity(0.2),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Main Content
+          SafeArea(
+            child: FadeTransition(
+              opacity: _fadeController,
+              child: SlideTransition(
+                position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+                    .animate(_slideController),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Branding Section
+                      const SizedBox(height: 20),
+                      Center(
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF9d4edd), Color(0xFF3a0ca3)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Icon(Icons.auto_awesome, color: Colors.white, size: 32),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Create Account',
+                              style: GoogleFonts.poppins(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Join our AI creative community',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: Colors.white70,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: size.height * 0.04),
+
+                      // Glassmorphism Form Container
+                      _GlassContainer(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Email Field
+                            _AuthInputField(
+                              label: AppStrings.emailLabel,
+                              hint: AppStrings.emailHint,
+                              icon: Icons.mail_outline_rounded,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Password Field
+                            _AuthInputField(
+                              label: AppStrings.passwordLabel,
+                              hint: AppStrings.passwordHint,
+                              icon: Icons.lock_outline_rounded,
+                              obscure: !_showPassword,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _showPassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                                  color: Colors.white70,
+                                  size: 20,
+                                ),
+                                onPressed: () {
+                                  setState(() => _showPassword = !_showPassword);
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Confirm Password Field
+                            _AuthInputField(
+                              label: AppStrings.confirmPasswordLabel,
+                              hint: AppStrings.passwordHint,
+                              icon: Icons.lock_outline_rounded,
+                              obscure: !_showConfirmPassword,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _showConfirmPassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                                  color: Colors.white70,
+                                  size: 20,
+                                ),
+                                onPressed: () {
+                                  setState(() => _showConfirmPassword = !_showConfirmPassword);
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Sign Up Button
+                            _GradientButton(
+                              label: 'Create Account',
+                              isLoading: false,
+                              onPressed: () {},
+                            ),
+                            const SizedBox(height: 18),
+
+                            // Divider
+                            Row(
+                              children: [
+                                const Expanded(
+                                  child: Divider(
+                                    color: Colors.white24,
+                                    thickness: 1,
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  child: Text(
+                                    'Or Sign Up With',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: Colors.white60,
+                                    ),
+                                  ),
+                                ),
+                                const Expanded(
+                                  child: Divider(
+                                    color: Colors.white24,
+                                    thickness: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 18),
+
+                            // Social Login Buttons
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _SocialLoginButton(
+                                  path: 'assets/auth/google.svg',
+                                  label: 'Google',
+                                  onPressed: _isGoogleLoading ? null : _handleGoogleSignIn,
+                                  isLoading: _isGoogleLoading,
+                                ),
+                                const SizedBox(width: 12),
+                                _SocialLoginButton(
+                                  path: 'assets/auth/meta.svg',
+                                  label: 'Meta',
+                                  onPressed: () {},
+                                ),
+                                const SizedBox(width: 12),
+                                _SocialLoginButton(
+                                  path: 'assets/auth/microsoft.svg',
+                                  label: 'Microsoft',
+                                  onPressed: () {},
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: size.height * 0.03),
+
+                      // Sign In Link
+                      Center(
+                        child: GestureDetector(
+                          onTap: () => Navigator.of(context).pop(),
+                          child: RichText(
+                            text: TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: 'Already have an account? ',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: 'Sign In',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blueAccent,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Footer Text
+                      Center(
+                        child: Text(
+                          'By continuing, you agree to Terms & Privacy',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: Colors.white54,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
-              Text(
-                AppStrings.registerTitle,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.authTitle(context, isDark),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Glassmorphism Container
+class _GlassContainer extends StatelessWidget {
+  final Widget child;
+
+  const _GlassContainer({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.1),
+                Colors.white.withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+              width: 1.5,
+            ),
+          ),
+          padding: const EdgeInsets.all(28),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+// Custom Auth Input Field
+class _AuthInputField extends StatelessWidget {
+  final String label;
+  final String hint;
+  final IconData icon;
+  final bool obscure;
+  final Widget? suffixIcon;
+
+  const _AuthInputField({
+    required this.label,
+    required this.hint,
+    required this.icon,
+    this.obscure = false,
+    this.suffixIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Colors.white70,
+            letterSpacing: 0.3,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withOpacity(0.08),
+                Colors.white.withOpacity(0.04),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.15),
+              width: 1,
+            ),
+          ),
+          child: TextField(
+            obscureText: obscure,
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 15,
+            ),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: GoogleFonts.poppins(
+                color: Colors.white38,
+                fontSize: 15,
               ),
-              const SizedBox(height: 8),
-              Text(
-                AppStrings.registerSubtitle,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.authSubtitle(context, isDark),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Icon(icon, color: Colors.blueAccent, size: 20),
               ),
-              const SizedBox(height: 18),
-              const _AuthField(
-                label: AppStrings.emailLabel,
-                hint: AppStrings.emailHint,
+              suffixIcon: suffixIcon,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
               ),
-              const SizedBox(height: 12),
-              const _AuthField(
-                label: AppStrings.passwordLabel,
-                hint: AppStrings.passwordHint,
-                obscure: true,
-              ),
-              const SizedBox(height: 12),
-              const _AuthField(
-                label: AppStrings.confirmPasswordLabel,
-                hint: AppStrings.passwordHint,
-                obscure: true,
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.buttonPrimary,
-                    foregroundColor: AppColors.buttonText,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Text(
-                    AppStrings.register,
-                    style: AppTextStyles.authButton(context),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              Row(
-                children: [
-                  const Expanded(child: Divider(color: AppColors.divider)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Text(
-                      AppStrings.orContinue,
-                      style: AppTextStyles.smallMuted(context, isDark),
-                    ),
-                  ),
-                  const Expanded(child: Divider(color: AppColors.divider)),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _SocialIconButton(
-                    path: 'assets/auth/google.svg',
-                    onPressed: _handleGoogleSignIn,
-                    isLoading: _isGoogleLoading,
-                  ),
-                  const SizedBox(width: 16),
-                  _SocialIconButton(
-                    path: 'assets/auth/meta.svg',
-                    onPressed: () {},
-                  ),
-                  const SizedBox(width: 16),
-                  _SocialIconButton(
-                    path: 'assets/auth/microsoft.svg',
-                    onPressed: () {},
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    AppStrings.alreadyHaveAccount,
-                    style: AppTextStyles.bodyMedium(context, isDark),
-                  ),
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Text(
-                      AppStrings.signIn,
-                      style: AppTextStyles.bodyStrong(context, isDark),
-                    ),
-                  ),
-                ],
+              border: InputBorder.none,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Gradient Button
+class _GradientButton extends StatefulWidget {
+  final String label;
+  final bool isLoading;
+  final VoidCallback? onPressed;
+
+  const _GradientButton({
+    required this.label,
+    this.isLoading = false,
+    this.onPressed,
+  });
+
+  @override
+  State<_GradientButton> createState() => _GradientButtonState();
+}
+
+class _GradientButtonState extends State<_GradientButton> with SingleTickerProviderStateMixin {
+  late AnimationController _scaleController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scaleController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) {
+        if (widget.onPressed != null) _scaleController.forward();
+      },
+      onTapUp: (_) {
+        _scaleController.reverse();
+      },
+      onTapCancel: () {
+        _scaleController.reverse();
+      },
+      onTap: widget.onPressed,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 1.0, end: 0.95).animate(_scaleController),
+        child: Container(
+          height: 56,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF9d4edd), Color(0xFF5a189a), Color(0xFF3a0ca3)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF9d4edd).withOpacity(0.4),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
             ],
+          ),
+          child: Center(
+            child: widget.isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    widget.label,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Social Login Button
+class _SocialLoginButton extends StatefulWidget {
+  final String path;
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+
+  const _SocialLoginButton({
+    required this.path,
+    required this.label,
+    this.onPressed,
+    this.isLoading = false,
+  });
+
+  @override
+  State<_SocialLoginButton> createState() => _SocialLoginButtonState();
+}
+
+class _SocialLoginButtonState extends State<_SocialLoginButton> with SingleTickerProviderStateMixin {
+  late AnimationController _scaleController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scaleController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) {
+        if (widget.onPressed != null) _scaleController.forward();
+      },
+      onTapUp: (_) {
+        _scaleController.reverse();
+      },
+      onTapCancel: () {
+        _scaleController.reverse();
+      },
+      onTap: widget.onPressed,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 1.0, end: 0.92).animate(_scaleController),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: Container(
+              width: 100,
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white.withOpacity(0.12),
+                    Colors.white.withOpacity(0.06),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.15),
+                  width: 1,
+                ),
+              ),
+              child: widget.isLoading
+                  ? const Center(
+                      child: SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SvgPicture.asset(widget.path, width: 20, height: 20),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.label,
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
           ),
         ),
       ),

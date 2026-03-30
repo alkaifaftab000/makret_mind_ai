@@ -181,14 +181,26 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.darkBackground
-          : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: isDark
-            ? AppColors.darkBackground
-            : AppColors.lightBackground,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [
+                  const Color(0xFF0F172A), 
+                  const Color(0xFF064E3B).withValues(alpha: 0.2),
+                ]
+              : [
+                  const Color(0xFFFDF2F8),
+                  Colors.white,
+                ],
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
           AppStrings.templatesTitle,
@@ -287,6 +299,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                   ),
           ),
         ],
+      ),
       ),
     );
   }

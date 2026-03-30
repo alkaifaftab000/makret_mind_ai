@@ -1,0 +1,25 @@
+                                  child: child,
+                                ),
+                              );
+                            },
+                            transitionDuration:  Duration(milliseconds: 300),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurpleAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child:  Text('Use This Template',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight)),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          ],
+        );
+  }
+}
