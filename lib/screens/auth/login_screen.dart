@@ -105,16 +105,16 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
 
-    // Modern background SVG pattern for AI aesthetic
+    // Light theme background SVG pattern
     const String bgPatternSvg = '''
     <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <pattern id="smallGrid" width="20" height="20" patternUnits="userSpaceOnUse">
-          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/>
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(0,0,0,0.02)" stroke-width="0.5"/>
         </pattern>
         <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
           <rect width="100" height="100" fill="url(#smallGrid)"/>
-          <path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+          <path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(0,0,0,0.04)" stroke-width="1"/>
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill="url(#grid)" />
@@ -122,10 +122,24 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     ''';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A), // Matches AuthLandingScreen
+      backgroundColor: Colors.white,
       body: Stack(
         fit: StackFit.expand,
         children: [
+          // Light gradient background
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white,
+                  const Color(0xFFF8F7FF).withValues(alpha: 0.8),
+                ],
+              ),
+            ),
+          ),
+
           // SVG Pattern Background
           Positioned.fill(
             child: SvgPicture.string(
@@ -134,30 +148,30 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
             ),
           ),
 
-          // Glowing Orb 1 (Top Left - Purple)
+          // Glowing Orb 1 (Top Right - Indigo)
           Positioned(
-            top: -50,
-            left: -50,
+            top: -100,
+            right: -50,
             child: Container(
               width: 300,
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF9d4edd).withOpacity(0.15),
+                color: const Color(0xFF6366F1).withOpacity(0.08),
               ),
             ),
           ),
 
-          // Glowing Orb 2 (Bottom Right - Pink/Rose)
+          // Glowing Orb 2 (Bottom Left - Purple)
           Positioned(
-            bottom: -100,
-            right: -50,
+            bottom: -80,
+            left: -50,
             child: Container(
               width: 350,
               height: 350,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFe91e63).withOpacity(0.12),
+                color: const Color(0xFF8B5CF6).withOpacity(0.08),
               ),
             ),
           ),
@@ -165,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           // Global Backdrop Filter to blur the orbs
           Positioned.fill(
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+              filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
               child: const SizedBox(),
             ),
           ),
@@ -195,22 +209,22 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 shape: BoxShape.circle,
                                 gradient: const LinearGradient(
                                   colors: [
-                                    Color(0xFF9d4edd),
-                                    Color(0xFFe91e63),
+                                    Color(0xFF6366F1),
+                                    Color(0xFF8B5CF6),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFFe91e63).withOpacity(0.3),
+                                    color: const Color(0xFF6366F1).withOpacity(0.25),
                                     blurRadius: 16,
                                     offset: const Offset(0, 8),
                                   ),
                                 ],
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.2),
-                                  width: 1.5,
+                                  color: Colors.white,
+                                  width: 2,
                                 ),
                               ),
                               child: const Center(
@@ -227,7 +241,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               style: GoogleFonts.poppins(
                                 fontSize: 28,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Colors.black87,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -235,7 +249,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               'Create Stunning AI Visuals Instantly',
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
-                                color: Colors.white70,
+                                color: Colors.black54,
                                 letterSpacing: 0.5,
                               ),
                             ),
@@ -245,7 +259,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
                       SizedBox(height: size.height * 0.05),
 
-                      // Glassmorphism Form Container
+                      // Form Container
                       _GlassContainer(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -267,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _showPassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
-                                  color: Colors.white70,
+                                  color: Colors.black54,
                                   size: 20,
                                 ),
                                 onPressed: () {
@@ -286,7 +300,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   'Forgot Password?',
                                   style: GoogleFonts.poppins(
                                     fontSize: 13,
-                                    color: Colors.white, // matched style
+                                    color: const Color(0xFF6366F1),
                                     decoration: TextDecoration.underline,
                                   ),
                                 ),
@@ -305,9 +319,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             // Divider
                             Row(
                               children: [
-                                const Expanded(
+                                Expanded(
                                   child: Divider(
-                                    color: Colors.white24,
+                                    color: Colors.black.withOpacity(0.12),
                                     thickness: 1,
                                   ),
                                 ),
@@ -317,13 +331,13 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                     'Or Continue With',
                                     style: GoogleFonts.poppins(
                                       fontSize: 12,
-                                      color: Colors.white60,
+                                      color: Colors.black54,
                                     ),
                                   ),
                                 ),
-                                const Expanded(
+                                Expanded(
                                   child: Divider(
-                                    color: Colors.white24,
+                                    color: Colors.black.withOpacity(0.12),
                                     thickness: 1,
                                   ),
                                 ),
@@ -332,8 +346,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             const SizedBox(height: 18),
 
                             // Social Login Buttons
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              spacing: 12,
+                              runSpacing: 12,
                               children: [
                                 _SocialLoginButton(
                                   path: 'assets/auth/google.svg',
@@ -341,13 +357,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   onPressed: _isGoogleLoading ? null : _handleGoogleSignIn,
                                   isLoading: _isGoogleLoading,
                                 ),
-                                const SizedBox(width: 12),
                                 _SocialLoginButton(
                                   path: 'assets/auth/meta.svg',
                                   label: 'Meta',
                                   onPressed: () {},
                                 ),
-                                const SizedBox(width: 12),
                                 _SocialLoginButton(
                                   path: 'assets/auth/microsoft.svg',
                                   label: 'Microsoft',
@@ -378,7 +392,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   text: "Don't have an account? ",
                                   style: GoogleFonts.poppins(
                                     fontSize: 14,
-                                    color: Colors.white70,
+                                    color: Colors.black54,
                                   ),
                                 ),
                                 TextSpan(
@@ -386,7 +400,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   style: GoogleFonts.poppins(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: const Color(0xFF6366F1),
                                     decoration: TextDecoration.underline,
                                   ),
                                 ),
@@ -404,7 +418,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           'By continuing, you agree to Terms & Privacy',
                           style: GoogleFonts.poppins(
                             fontSize: 11,
-                            color: Colors.white54,
+                            color: Colors.black38,
                           ),
                         ),
                       ),
@@ -420,7 +434,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   }
 }
 
-// Glassmorphism Container
+// Light Theme Glassmorphism Container
 class _GlassContainer extends StatelessWidget {
   final Widget child;
 
@@ -438,13 +452,13 @@ class _GlassContainer extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.white.withOpacity(0.1),
-                Colors.white.withOpacity(0.05),
+                Colors.white.withOpacity(0.75),
+                Colors.white.withOpacity(0.6),
               ],
             ),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withOpacity(0.4),
               width: 1.5,
             ),
           ),
@@ -456,7 +470,7 @@ class _GlassContainer extends StatelessWidget {
   }
 }
 
-// Custom Auth Input Field
+// Custom Auth Input Field - Light Theme
 class _AuthInputField extends StatelessWidget {
   final String label;
   final String hint;
@@ -482,7 +496,7 @@ class _AuthInputField extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: Colors.white70,
+            color: Colors.black87,
             letterSpacing: 0.3,
           ),
         ),
@@ -490,34 +504,27 @@ class _AuthInputField extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withOpacity(0.08),
-                Colors.white.withOpacity(0.04),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: Colors.white.withOpacity(0.6),
             border: Border.all(
-              color: Colors.white.withOpacity(0.15),
-              width: 1,
+              color: Colors.black.withOpacity(0.1),
+              width: 1.5,
             ),
           ),
           child: TextField(
             obscureText: obscure,
             style: GoogleFonts.poppins(
-              color: Colors.white,
+              color: Colors.black87,
               fontSize: 15,
             ),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: GoogleFonts.poppins(
-                color: Colors.white38,
+                color: Colors.black38,
                 fontSize: 15,
               ),
               prefixIcon: Padding(
                 padding: const EdgeInsets.all(14),
-                child: Icon(icon, color: const Color(0xFFe91e63), size: 20),
+                child: Icon(icon, color: const Color(0xFF6366F1), size: 20),
               ),
               suffixIcon: suffixIcon,
               contentPadding: const EdgeInsets.symmetric(
@@ -586,14 +593,14 @@ class _GradientButtonState extends State<_GradientButton> with SingleTickerProvi
           height: 56,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF9d4edd), Color(0xFFe91e63)],
+              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFe91e63).withOpacity(0.4),
+                color: const Color(0xFF6366F1).withOpacity(0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -686,15 +693,15 @@ class _SocialLoginButtonState extends State<_SocialLoginButton> with SingleTicke
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.white.withOpacity(0.12),
-                    Colors.white.withOpacity(0.06),
+                    Colors.white.withOpacity(0.6),
+                    Colors.white.withOpacity(0.4),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.black.withOpacity(0.1),
                   width: 1,
                 ),
               ),
@@ -705,7 +712,7 @@ class _SocialLoginButtonState extends State<_SocialLoginButton> with SingleTicke
                         width: 16,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: const Color(0xFF6366F1),
                         ),
                       ),
                     )
@@ -719,7 +726,7 @@ class _SocialLoginButtonState extends State<_SocialLoginButton> with SingleTicke
                           style: GoogleFonts.poppins(
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
-                            color: Colors.white70,
+                            color: Colors.black87,
                           ),
                         ),
                       ],

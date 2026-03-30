@@ -239,7 +239,7 @@ class _BentoGrid extends StatelessWidget {
           icon: Icons.auto_awesome_rounded,
           gradientColors: const [Color(0xFF7b4397), Color(0xFF4286f4)], // Purple to blue
           height: 125, // Slightly taller for better icon/text fit
-          bgImage: 'https://picsum.photos/seed/aistudio/600/300', // Premium background texture
+          bgImage: 'https://images.unsplash.com/photo-1679293294919-cbcc7ee8ddf1?w=600&h=300&fit=crop', // AI Art generation
           onTap: () => Navigator.push(context, FadeSlideRoute(page: const AIStudioScreen())),
         ),
         const SizedBox(height: 16),
@@ -254,7 +254,7 @@ class _BentoGrid extends StatelessWidget {
                 icon: Icons.video_camera_back_rounded,
                 gradientColors: const [Color(0xFFe96c8a), Color(0xFFdc2430)], // Pink/Red
                 height: 125, // Increased height to prevent pixel overflow
-                bgImage: 'https://picsum.photos/seed/videoad/300/300',
+                bgImage: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=300&h=300&fit=crop', // Video production
                 onTap: () => Navigator.push(context, FadeSlideRoute(page: VideoMainScreen())),
               ),
             ),
@@ -267,7 +267,7 @@ class _BentoGrid extends StatelessWidget {
                 icon: Icons.image_rounded,
                 gradientColors: const [Color(0xFF1CB5E0), Color(0xFF000851)], // Cyan/Navy
                 height: 125, // Increased height to prevent pixel overflow
-                bgImage: 'https://picsum.photos/seed/bannerad/400/300',
+                bgImage: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop', // Design aesthetics
                 onTap: () => Navigator.push(context, FadeSlideRoute(page: const PosterMainScreen())),
               ),
             ),
@@ -278,7 +278,7 @@ class _BentoGrid extends StatelessWidget {
   }
 }
 
-class _DashboardCard extends StatelessWidget {
+class _DashboardCard extends StatefulWidget {
   final String title;
   final String subtitle;
   final IconData icon;
@@ -298,98 +298,126 @@ class _DashboardCard extends StatelessWidget {
   });
 
   @override
+  State<_DashboardCard> createState() => _DashboardCardState();
+}
+
+class _DashboardCardState extends State<_DashboardCard> {
+  bool _imageLoadError = false;
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Container(
-        height: height,
+        height: widget.height,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          image: bgImage != null
-              ? DecorationImage(
-                  image: NetworkImage(bgImage!),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(
-                    gradientColors.last.withValues(alpha: 0.65), // Heavy tint to ensure text remains perfectly readable
-                    BlendMode.srcATop,
-                  ),
-                )
-              : null,
-          gradient: bgImage == null
-              ? LinearGradient(
-                  colors: gradientColors,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
           boxShadow: [
             BoxShadow(
-              color: gradientColors.first.withValues(alpha: 0.35),
+              color: widget.gradientColors.first.withValues(alpha: 0.35),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
           ],
         ),
-        child: Stack(
-          children: [
-            // Decorative circles
-            Positioned(
-              right: -20,
-              top: -20,
-              child: Container(
-                width: height * 0.8,
-                height: height * 0.8,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Background gradient (always present as fallback)
+              Container(
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.08),
+                  gradient: LinearGradient(
+                    colors: widget.gradientColors,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // Background image if available
+              if (widget.bgImage != null && !_imageLoadError)
+                Image.network(
+                  widget.bgImage!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        setState(() => _imageLoadError = true);
+                      }
+                    });
+                    return const SizedBox.shrink();
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    return child;
+                  },
+                  color: widget.gradientColors.last.withValues(alpha: 0.3),
+                  colorBlendMode: BlendMode.srcATop,
+                ),
+              // Content overlay
+              Stack(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
+                  // Decorative circles
+                  Positioned(
+                    right: -20,
+                    top: -20,
+                    child: Container(
+                      width: widget.height * 0.8,
+                      height: widget.height * 0.8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.08),
+                      ),
                     ),
-                    child: Icon(icon, color: Colors.white, size: 24),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          height: 1.1,
+                  Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(widget.icon, color: Colors.white, size: 24),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.poppins(
-                          fontSize: 9,
-                          color: Colors.white.withValues(alpha: 0.85),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              widget.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                height: 1.1,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              widget.subtitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.poppins(
+                                fontSize: 9,
+                                color: Colors.white.withValues(alpha: 0.85),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -515,21 +543,6 @@ class _HomeHeader extends StatelessWidget {
         // Theme Toggle Button
         const ThemeToggleButton(),
         const SizedBox(width: 8),
-        // Notification bell
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.divider, width: 0.8),
-            color: isDark ? AppColors.darkCard : Colors.white,
-          ),
-          child: Icon(
-            Icons.notifications_none_rounded,
-            size: 20,
-            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-          ),
-        ),
-        const SizedBox(width: 10),
         // Pro button
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

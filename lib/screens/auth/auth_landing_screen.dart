@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -21,12 +20,12 @@ class _AuthLandingScreenState extends State<AuthLandingScreen> with SingleTicker
   bool _isGoogleLoading = false;
 
   final List<String> _images = [
-    'https://picsum.photos/seed/ai1/400/600',
-    'https://picsum.photos/seed/ai2/400/500',
-    'https://picsum.photos/seed/ai3/400/700',
-    'https://picsum.photos/seed/ai4/400/400',
-    'https://picsum.photos/seed/ai5/400/600',
-    'https://picsum.photos/seed/ai6/400/500',
+    'https://images.unsplash.com/photo-1677442d019cecf8f6eca0a553e92f4fb0f4398a?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1611339555312-e607c04352fa?w=400&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1633356122544-f134324ef6db?w=400&h=700&fit=crop',
+    'https://images.unsplash.com/photo-1677442d019cecf8f6eca0a553e92f4fb0f4398b?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1488190211105-8342f3e747d0?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=500&fit=crop',
   ];
 
   @override
@@ -73,13 +72,13 @@ class _AuthLandingScreenState extends State<AuthLandingScreen> with SingleTicker
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A),
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
           // Background Masonry Grid of Images
           Positioned.fill(
             child: Opacity(
-              opacity: 0.6,
+              opacity: 0.5,
               child: SingleChildScrollView(
                 physics: const NeverScrollableScrollPhysics(),
                 child: Row(
@@ -128,7 +127,7 @@ class _AuthLandingScreenState extends State<AuthLandingScreen> with SingleTicker
             ),
           ),
 
-          // Gradient Overlay
+          // Light Gradient Overlay
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -136,12 +135,13 @@ class _AuthLandingScreenState extends State<AuthLandingScreen> with SingleTicker
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.0),
-                    const Color(0xFF1a0033).withOpacity(0.6),
-                    const Color(0xFF0F0F1A).withOpacity(0.95),
-                    const Color(0xFF0F0F1A),
+                    Colors.white.withValues(alpha: 0.0),
+                    Colors.white.withValues(alpha: 0.4),
+                    Colors.white.withValues(alpha: 0.7),
+                    Colors.white.withValues(alpha: 0.95),
+                    Colors.white,
                   ],
-                  stops: const [0.0, 0.4, 0.7, 1.0],
+                  stops: const [0.0, 0.3, 0.5, 0.8, 1.0],
                 ),
               ),
             ),
@@ -163,10 +163,11 @@ class _AuthLandingScreenState extends State<AuthLandingScreen> with SingleTicker
                           'Create Stunning AI\nVideos Instantly',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.poppins(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 36,
+                            fontWeight: FontWeight.w800,
                             height: 1.2,
-                            color: Colors.white,
+                            color: Colors.black87,
+                            letterSpacing: -0.5,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -174,8 +175,8 @@ class _AuthLandingScreenState extends State<AuthLandingScreen> with SingleTicker
                           'Turn text, images, and concepts into cinematic AI-generated videos in seconds.',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.white70,
+                            fontSize: 15,
+                            color: Colors.black54,
                             height: 1.5,
                           ),
                         ),
@@ -204,7 +205,7 @@ class _AuthLandingScreenState extends State<AuthLandingScreen> with SingleTicker
                         // Apple Login
                         _GlassActionButton(
                           label: 'Continue with Apple',
-                          iconPath: 'assets/auth/apple.svg', // Assuming you have this icon
+                          iconPath: 'assets/auth/apple.svg',
                           backupIcon: Icons.apple_rounded,
                           onPressed: () {},
                         ),
@@ -237,7 +238,7 @@ class _AuthLandingScreenState extends State<AuthLandingScreen> with SingleTicker
                             text: "Don't have an account? ",
                             style: GoogleFonts.poppins(
                               fontSize: 14,
-                              color: Colors.white70,
+                              color: Colors.black54,
                             ),
                           ),
                           TextSpan(
@@ -245,7 +246,7 @@ class _AuthLandingScreenState extends State<AuthLandingScreen> with SingleTicker
                             style: GoogleFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: const Color(0xFF6366F1),
                               decoration: TextDecoration.underline,
                             ),
                           ),
@@ -268,11 +269,18 @@ class _AuthLandingScreenState extends State<AuthLandingScreen> with SingleTicker
       margin: const EdgeInsets.all(6),
       height: height,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         image: DecorationImage(
           image: NetworkImage(url),
           fit: BoxFit.cover,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
     );
   }
@@ -324,14 +332,14 @@ class _PrimaryActionBtnState extends State<_PrimaryActionBtn> with SingleTickerP
           height: 60,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF9d4edd), Color(0xFFe91e63)],
+              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFe91e63).withOpacity(0.4),
+                color: const Color(0xFF6366F1).withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -406,51 +414,45 @@ class _GlassActionButtonState extends State<_GlassActionButton> with SingleTicke
       onTap: widget.onPressed,
       child: ScaleTransition(
         scale: Tween<double>(begin: 1.0, end: 0.95).animate(_scaleController),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(30),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
-                  width: 1,
-                ),
-              ),
-              child: widget.isLoading
-                  ? const Center(
-                      child: SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: Colors.white,
-                        ),
-                      ),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (widget.iconPath != null)
-                          SvgPicture.asset(widget.iconPath!, width: 24, height: 24)
-                        else if (widget.backupIcon != null)
-                          Icon(widget.backupIcon, color: Colors.white, size: 24),
-                        const SizedBox(width: 12),
-                        Text(
-                          widget.label,
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
+        child: Container(
+          height: 56,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.black.withValues(alpha: 0.1),
+              width: 1.5,
             ),
           ),
+          child: widget.isLoading
+              ? const Center(
+                  child: SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Color(0xFF6366F1),
+                    ),
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (widget.iconPath != null)
+                      SvgPicture.asset(widget.iconPath!, width: 24, height: 24)
+                    else if (widget.backupIcon != null)
+                      Icon(widget.backupIcon, color: Colors.black87, size: 24),
+                    const SizedBox(width: 12),
+                    Text(
+                      widget.label,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );
