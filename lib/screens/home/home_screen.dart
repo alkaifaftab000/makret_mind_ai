@@ -9,6 +9,7 @@ import 'package:market_mind/models/brand_model.dart';
 import 'package:market_mind/screens/ai_studio/ai_studio_screen.dart';
 import 'package:market_mind/screens/brand_details/brand_details_screen.dart';
 import 'package:market_mind/screens/product/product_screen.dart';
+import 'package:market_mind/screens/poster_generator/poster_main_screen.dart';
 import 'package:market_mind/services/brand_service.dart';
 import 'package:market_mind/utils/app_transitions.dart';
 import 'package:market_mind/utils/app_notification.dart';
@@ -260,12 +261,12 @@ class _BentoGrid extends StatelessWidget {
               flex: 2,
               child: _DashboardCard(
                 title: 'Ad Banner\nPost',
-                subtitle: 'Coming soon',
+                subtitle: 'Tap to generate',
                 icon: Icons.image_rounded,
                 gradientColors: const [Color(0xFF1CB5E0), Color(0xFF000851)], // Cyan/Navy
                 height: 125, // Increased height to prevent pixel overflow
                 bgImage: 'https://picsum.photos/seed/bannerad/400/300',
-                onTap: () {}, // Dummy
+                onTap: () => Navigator.push(context, FadeSlideRoute(page: const PosterMainScreen())),
               ),
             ),
           ],
