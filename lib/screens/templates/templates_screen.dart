@@ -160,6 +160,8 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
       videoLength: template.config.videoLength,
       status: 'final_ready',
       scenes: [],
+      videoJobs: [],
+      posterJobs: [],
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );

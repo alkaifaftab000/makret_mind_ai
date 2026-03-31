@@ -31,6 +31,9 @@ class BrandModel extends HiveObject {
   @HiveField(8)
   late DateTime updatedAt;
 
+  final String? tagline;
+  final String? websiteUrl;
+
   BrandModel({
     required this.id,
     required this.name,
@@ -41,6 +44,8 @@ class BrandModel extends HiveObject {
     this.productions = 0,
     DateTime? createdAt,
     DateTime? updatedAt,
+    this.tagline,
+    this.websiteUrl,
   }) {
     this.createdAt = createdAt ?? DateTime.now();
     this.updatedAt = updatedAt ?? DateTime.now();
@@ -58,6 +63,8 @@ class BrandModel extends HiveObject {
       'productions': productions,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'tagline': tagline,
+      'websiteUrl': websiteUrl,
     };
   }
 
@@ -77,6 +84,8 @@ class BrandModel extends HiveObject {
       updatedAt: json['updated_at'] != null 
           ? DateTime.parse(json['updated_at'].toString())
           : (json['updatedAt'] != null ? DateTime.parse(json['updatedAt'].toString()) : null),
+      tagline: json['tagline']?.toString(),
+      websiteUrl: json['website_url']?.toString() ?? json['websiteUrl']?.toString(),
     );
   }
 
@@ -91,6 +100,8 @@ class BrandModel extends HiveObject {
     int? productions,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? tagline,
+    String? websiteUrl,
   }) {
     return BrandModel(
       id: id ?? this.id,
@@ -102,6 +113,8 @@ class BrandModel extends HiveObject {
       productions: productions ?? this.productions,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      tagline: tagline ?? this.tagline,
+      websiteUrl: websiteUrl ?? this.websiteUrl,
     );
   }
 }

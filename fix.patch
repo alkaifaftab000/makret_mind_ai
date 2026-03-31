@@ -1,0 +1,14 @@
+--- makret_mind_ai/lib/screens/brand_details/brand_details_screen.dart
++++ makret_mind_ai/lib/screens/brand_details/brand_details_screen.dart
+@@ -461,6 +461,8 @@
+                             ),
+                           ),
+               ),
++            ],
++          ),
++        );
++      }
++
++      Future<void> _shareBrand() async {
+       try {
+         await brandDetailsActionService.shareBrand(_brand);

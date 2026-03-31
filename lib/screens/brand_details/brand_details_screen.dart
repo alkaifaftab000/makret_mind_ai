@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:market_mind/constants/app_colors.dart';
 import 'package:market_mind/constants/app_strings.dart';
-import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/models/brand_model.dart';
+import 'package:market_mind/models/product_model.dart';
+import 'package:market_mind/screens/product/product_details_screen.dart';
 import 'package:market_mind/screens/brand_details/brand_service.dart';
+import 'package:market_mind/services/product_service.dart';
 import 'package:market_mind/utils/app_notification.dart';
 
 class BrandDetailsScreen extends StatefulWidget {
@@ -21,471 +23,531 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
   late BrandModel _brand;
   bool _isDeleting = false;
 
+  List<ProductModel> _products = [];
+  bool _isLoadingProducts = true;
+  final ProductService _productService = ProductService();
+
   @override
   void initState() {
     super.initState();
     _brand = widget.brand;
+    _loadProducts();
   }
 
-  Future<void> _deleteBrand() async {
-    // Show confirmation dialog
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(
-          AppStrings.deleteBrand,
-          style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600),
-        ),
-        content: Text(
-          'Are you sure you want to delete "${widget.brand.name}"? This action cannot be undone.',
-          style: GoogleFonts.poppins(fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              AppStrings.cancel,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textMutedLight,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              AppStrings.delete,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.red,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    setState(() => _isDeleting = true);
-
+  Future<void> _loadProducts() async {
     try {
-      await brandDetailsActionService.deleteBrand(_brand.id);
-
+      final products = await _productService.getProductsByBrand(_brand.id);
       if (mounted) {
-        AppNotification.success(
-          context,
-          message: 'Brand deleted successfully!',
-        );
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            Navigator.pop(
-              context,
-              true,
-            ); // Return true to indicate refresh needed
-          }
+        setState(() {
+          _products = products;
+          _isLoadingProducts = false;
         });
       }
     } catch (e) {
       if (mounted) {
-        AppNotification.error(
-          context,
-          message: 'Failed to delete brand. Please try again.',
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isDeleting = false);
+        setState(() {
+          _isLoadingProducts = false;
+        });
+        AppNotification.error(context, message: 'Failed to load products');
       }
     }
   }
 
-  void _showOptionsMenu() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  Widget _buildBrandLogo() {
+    Widget imageWidget;
+    if (_brand.imagePath.startsWith('http')) {
+      imageWidget = Image.network(
+        _brand.imagePath,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) =>
+            const Icon(Icons.business, color: Colors.white54, size: 50),
+      );
+    } else {
+      final file = File(_brand.imagePath);
+      if (file.existsSync()) {
+        imageWidget = Image.file(file, fit: BoxFit.cover);
+      } else {
+        imageWidget = const Icon(
+          Icons.business,
+          color: Colors.white54,
+          size: 50,
+        );
+      }
+    }
+
+    return Container(
+      width: 120,
+      height: 120,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: const Color(0xFF1E1E24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF8B5CF6).withOpacity(0.3),
+            blurRadius: 30,
+            spreadRadius: 5,
+          ),
+        ],
+        border: Border.all(color: Colors.white12, width: 1.5),
       ),
-      builder: (_) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+      child: ClipOval(child: imageWidget),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const backgroundColor = Color(0xFF121214);
+
+    final videos = _products.expand((p) => p.videoJobs).toList();
+    final posters = _products.expand((p) => p.posterJobs).toList();
+
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      body: SafeArea(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.textMutedLight.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
+            // App Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 12.0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _RoundIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    onTap: () => Navigator.pop(context),
+                  ),
+                  Expanded(
+                    child: Text(
+                      _brand.name,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  _RoundIconButton(icon: Icons.more_vert_rounded, onTap: () {}),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
-            _MenuOption(
-              icon: Icons.edit_rounded,
-              label: AppStrings.editBrand,
-              onTap: () async {
-                Navigator.pop(context);
-                await _editBrand();
-              },
+
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    _buildBrandLogo(),
+                    const SizedBox(height: 24),
+                    Text(
+                      _brand.name,
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _brand.tagline ??
+                          'Effortless Beauty. Everyday Confidence.',
+                      style: GoogleFonts.poppins(
+                        color: const Color(0xFFA78BFA),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                      child: Text(
+                        _brand.description ??
+                            'A modern brand focused on simple, effective, and premium products designed for everyday use.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          color: const Color(0xFFA1A1AA),
+                          fontSize: 12,
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _brand.websiteUrl ?? 'www.brand.com',
+                      style: GoogleFonts.poppins(
+                        color: const Color(0xFF38BDF8),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        decoration: TextDecoration.underline,
+                        decorationColor: const Color(0xFF38BDF8),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _ActionButton(
+                          icon: Icons.language_rounded,
+                          onTap: () {},
+                        ),
+                        const SizedBox(width: 16),
+                        _ActionButton(
+                          icon: Icons.camera_alt_rounded,
+                          onTap: () {},
+                        ),
+                        const SizedBox(width: 16),
+                        _ActionButton(icon: Icons.share_rounded, onTap: () {}),
+                      ],
+                    ),
+                    const SizedBox(height: 40),
+                    if (_products.isNotEmpty) ...[
+                      _SectionHeader(title: 'Products', trailing: '${_products.length} ITEMS'),
+                      SizedBox(
+                        height: 240,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: _products.length,
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 16.0),
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ProductDetailsScreen(product: _products[index]),
+                                    ),
+                                  );
+                                },
+                                child: _FeaturedProductCard(product: _products[index], width: 320),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                    ],
+                    if (videos.isNotEmpty || _isLoadingProducts) ...[
+                      _SectionHeader(
+                        title: 'AI Studio Videos',
+                        trailing: '${videos.length} CLIPS',
+                      ),
+                      if (_isLoadingProducts)
+                        const SizedBox(
+                          height: 200,
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else
+                        SizedBox(
+                          height: 220,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: videos.length,
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 16.0),
+                                child: _VideoCard(job: videos[index]),
+                              );
+                            },
+                          ),
+                        ),
+                      const SizedBox(height: 40),
+                    ],
+                    if (posters.isNotEmpty || _isLoadingProducts) ...[
+                      _SectionHeader(title: 'Brand Posters'),
+                      if (_isLoadingProducts)
+                        const SizedBox(
+                          height: 200,
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                          child: GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                  childAspectRatio: 0.7,
+                                ),
+                            itemCount: posters.length,
+                            itemBuilder: (context, index) {
+                              return _PosterCard(job: posters[index]);
+                            },
+                          ),
+                        ),
+                      const SizedBox(height: 60),
+                    ],
+                  ],
+                ),
+              ),
             ),
-            _MenuOption(
-              icon: Icons.share_rounded,
-              label: AppStrings.share,
-              onTap: () async {
-                Navigator.pop(context);
-                await _shareBrand();
-              },
-            ),
-            _MenuOption(
-              icon: Icons.delete_rounded,
-              label: AppStrings.delete,
-              isDestructive: true,
-              onTap: () {
-                Navigator.pop(context);
-                _deleteBrand();
-              },
-            ),
-            const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
+}
+
+class _RoundIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _RoundIconButton({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: const BoxDecoration(
+          color: Color(0xFF1E1E24),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
+    );
+  }
+}
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.darkBackground
-          : AppColors.lightBackground,
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Stack(
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _ActionButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: const BoxDecoration(
+          color: Color(0xFF27272A),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 22),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final String? trailing;
+
+  const _SectionHeader({required this.title, this.trailing});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          if (trailing != null)
+            Text(
+              trailing!,
+              style: GoogleFonts.poppins(
+                color: Colors.white60,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeaturedProductCard extends StatelessWidget {
+  final ProductModel product;
+  final double width;
+
+  const _FeaturedProductCard({required this.product, this.width = double.infinity});
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl = product.imagePaths.isNotEmpty
+        ? product.imagePaths.first
+        : null;
+
+    return Container(
+      width: width,
+      height: 240,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: const Color(0xFF1E1E24),
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: imageUrl != null && imageUrl.isNotEmpty
+                ? (imageUrl.startsWith('http')
+                      ? Image.network(imageUrl, fit: BoxFit.cover)
+                      : Image.file(File(imageUrl), fit: BoxFit.cover))
+                : const Icon(Icons.image, color: Colors.white24, size: 60),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+                stops: const [0.4, 1.0],
+              ),
+            ),
+          ),
+          Positioned(
+            left: 20,
+            right: 20,
+            bottom: 20,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  height: MediaQuery.of(context).size.height * 0.6,
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(24),
-                      bottomRight: Radius.circular(24),
-                    ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
                   ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(24),
-                      bottomRight: Radius.circular(24),
-                    ),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        _buildImage(),
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.black.withValues(alpha: 0.1),
-                                Colors.black.withValues(alpha: 0.3),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          left: 16,
-                          right: 16,
-                          bottom: 16,
-                          child: Text(
-                            _brand.name,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.poppins(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'BEST SELLER',
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFFDDD6FE),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-                Positioned(
-                  top: 30,
-                  left: 12,
-                  child: _OverlayIconButton(
-                    icon: Icons.arrow_back_rounded,
-                    onTap: () => Navigator.pop(context),
+                const SizedBox(height: 8),
+                Text(
+                  product.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                Positioned(
-                  top: 30,
-                  right: 12,
-                  child: _OverlayIconButton(
-                    icon: Icons.more_vert_rounded,
-                    onTap: _showOptionsMenu,
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ProductDetailsScreen(product: product),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      'View Details',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_brand.description != null &&
-                      _brand.description!.trim().isNotEmpty) ...[
-                    _SectionTitle(AppStrings.description),
-                    const SizedBox(height: 6),
-                    Text(
-                      _brand.description!,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        height: 1.45,
-                        color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                  ],
-                  _SectionTitle(AppStrings.details),
-                  const SizedBox(height: 8),
-                  _SimpleDetailRow(
-                    heading: AppStrings.category,
-                    value: _brand.category?.trim().isNotEmpty == true
-                        ? _brand.category!
-                        : AppStrings.notSet,
-                  ),
-                  _SimpleDetailRow(
-                    heading: AppStrings.targetAudience,
-                    value: _brand.targetAudience?.trim().isNotEmpty == true
-                        ? _brand.targetAudience!
-                        : AppStrings.notSet,
-                  ),
-                  _SimpleDetailRow(
-                    heading: AppStrings.productions,
-                    value:
-                        '${_brand.productions} production${_brand.productions == 1 ? '' : 's'}',
-                  ),
-                  _SimpleDetailRow(
-                    heading: AppStrings.created,
-                    value: _formatDate(_brand.createdAt),
-                  ),
-                  _SimpleDetailRow(
-                    heading: AppStrings.updated,
-                    value: _formatDate(_brand.updatedAt),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _isDeleting ? null : _deleteBrand,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red.shade600,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: Text(
-                            AppStrings.delete,
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _editBrand,
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            side: BorderSide(
-                              color: isDark
-                                  ? AppColors.darkCardAlt
-                                  : AppColors.lightCardAlt,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: Text(
-                            AppStrings.edit,
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? AppColors.textPrimaryDark
-                                  : AppColors.textPrimaryLight,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _shareBrand,
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            side: BorderSide(
-                              color: isDark
-                                  ? AppColors.darkCardAlt
-                                  : AppColors.lightCardAlt,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: Text(
-                            AppStrings.share,
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? AppColors.textPrimaryDark
-                                  : AppColors.textPrimaryLight,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
+}
 
-  Future<void> _shareBrand() async {
-    try {
-      await brandDetailsActionService.shareBrand(_brand);
-      if (!mounted) return;
-      AppNotification.success(
-        context,
-        message: 'Brand details copied for sharing',
-      );
-    } catch (_) {
-      if (!mounted) return;
-      AppNotification.error(context, message: 'Unable to share brand now');
-    }
-  }
+class _VideoCard extends StatelessWidget {
+  final VideoJob job;
 
-  Future<void> _editBrand() async {
-    try {
-      final updated = await brandDetailsActionService.editBrand(brand: _brand);
-      if (!mounted) return;
-      setState(() {
-        _brand = updated;
-      });
-      AppNotification.info(
-        context,
-        message: 'Edit flow will be connected next',
-      );
-    } catch (_) {
-      if (!mounted) return;
-      AppNotification.error(context, message: 'Unable to open edit right now');
-    }
-  }
+  const _VideoCard({required this.job});
 
-  Widget _buildImage() {
-    if (_brand.imagePath.startsWith('http')) {
-      return Image.network(
-        _brand.imagePath,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _placeholderImage(),
-      );
-    } else {
-      final file = File(_brand.imagePath);
-      if (file.existsSync()) {
-        return Image.file(file, fit: BoxFit.cover);
-      }
-      return _placeholderImage();
-    }
-  }
+  @override
+  Widget build(BuildContext context) {
+    final String? finalUrl = job.finalVideoUrl;
 
-  Widget _placeholderImage() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      color: isDark ? AppColors.darkCard : AppColors.lightCard,
-      child: Center(
-        child: Icon(
-          Icons.image_rounded,
-          size: 80,
-          color: isDark
-              ? AppColors.textSecondaryDark
-              : AppColors.textMutedLight,
-        ),
+      width: 140,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFF1E1E24),
       ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  final String title;
-
-  const _SectionTitle(this.title);
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Text(title, style: AppTextStyles.sectionTitle(context, isDark));
-  }
-}
-
-class _SimpleDetailRow extends StatelessWidget {
-  final String heading;
-  final String value;
-
-  const _SimpleDetailRow({required this.heading, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          SizedBox(
-            width: 118,
-            child: Text(
-              heading,
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textMutedLight,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: finalUrl != null && finalUrl.isNotEmpty
+                ? Image.network(finalUrl, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.video_library, color: Colors.white24))
+                : const Icon(Icons.video_library, color: Colors.white24),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: Colors.black.withOpacity(0.3),
+            ),
+            child: const Center(
+              child: Icon(
+                Icons.play_arrow_rounded,
+                color: Colors.white,
+                size: 40,
               ),
             ),
           ),
-          Expanded(
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: 12,
             child: Text(
-              value,
+              job.status.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: isDark
-                    ? AppColors.textSecondaryDark
-                    : AppColors.textSecondaryLight,
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
               ),
             ),
           ),
@@ -495,54 +557,25 @@ class _SimpleDetailRow extends StatelessWidget {
   }
 }
 
-class _MenuOption extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool isDestructive;
+class _PosterCard extends StatelessWidget {
+  final PosterJob job;
 
-  const _MenuOption({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.isDestructive = false,
-  });
+  const _PosterCard({required this.job});
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: isDestructive ? Colors.red : null),
-      title: Text(
-        label,
-        style: GoogleFonts.poppins(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          color: isDestructive ? Colors.red : null,
-        ),
+    final String? resultUrl = job.resultUrl;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFF1E1E24),
       ),
-      onTap: onTap,
-    );
-  }
-}
-
-class _OverlayIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _OverlayIconButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black.withValues(alpha: 0.26),
-      borderRadius: BorderRadius.circular(100),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(100),
-        onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.all(8),
-          child: Icon(icon, color: Colors.white, size: 20),
-        ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: resultUrl != null && resultUrl.isNotEmpty
+            ? Image.network(resultUrl, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.image, color: Colors.white24))
+            : const Icon(Icons.image, color: Colors.white24),
       ),
     );
   }

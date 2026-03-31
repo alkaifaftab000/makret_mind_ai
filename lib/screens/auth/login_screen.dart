@@ -19,9 +19,11 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
   bool _isGoogleLoading = false;
   bool _isDevLoginLoading = false;
-  bool _showPassword = false;
   late AnimationController _fadeController;
   late AnimationController _slideController;
+
+  final TextEditingController _emailController = TextEditingController(text: 'avinash@stallar.tech');
+  final TextEditingController _nameController = TextEditingController(text: 'Avinash Shrivastava');
 
   @override
   void initState() {
@@ -40,15 +42,25 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   @override
   void dispose() {
+    _emailController.dispose();
+    _nameController.dispose();
     _fadeController.dispose();
     _slideController.dispose();
     super.dispose();
   }
 
   Future<void> _handleDevLogin() async {
+    final email = _emailController.text.trim();
+    final name = _nameController.text.trim();
+
+    if (email.isEmpty || name.isEmpty) {
+      AppNotification.error(context, message: 'Please enter both email and name.');
+      return;
+    }
+
     setState(() => _isDevLoginLoading = true);
     try {
-      final user = await authService.devLogin();
+      final user = await authService.devLogin(email: email, name: name);
       if (user != null && mounted) {
         AppNotification.success(
           context,
@@ -266,28 +278,19 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           children: [
                             // Email Field
                             _AuthInputField(
+                              controller: _emailController,
                               label: AppStrings.emailLabel,
                               hint: AppStrings.emailHint,
                               icon: Icons.mail_outline_rounded,
                             ),
                             const SizedBox(height: 16),
 
-                            // Password Field with Visibility Toggle
+                            // Name Field (replacing password for dev login)
                             _AuthInputField(
-                              label: AppStrings.passwordLabel,
-                              hint: AppStrings.passwordHint,
-                              icon: Icons.lock_outline_rounded,
-                              obscure: !_showPassword,
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _showPassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
-                                  color: Colors.black54,
-                                  size: 20,
-                                ),
-                                onPressed: () {
-                                  setState(() => _showPassword = !_showPassword);
-                                },
-                              ),
+                              controller: _nameController,
+                              label: 'Name',
+                              hint: 'Enter your name',
+                              icon: Icons.person_outline_rounded,
                             ),
                             const SizedBox(height: 12),
 
@@ -477,6 +480,7 @@ class _AuthInputField extends StatelessWidget {
   final IconData icon;
   final bool obscure;
   final Widget? suffixIcon;
+  final TextEditingController? controller;
 
   const _AuthInputField({
     required this.label,
@@ -484,6 +488,7 @@ class _AuthInputField extends StatelessWidget {
     required this.icon,
     this.obscure = false,
     this.suffixIcon,
+    this.controller,
   });
 
   @override
@@ -511,6 +516,7 @@ class _AuthInputField extends StatelessWidget {
             ),
           ),
           child: TextField(
+            controller: controller,
             obscureText: obscure,
             style: GoogleFonts.poppins(
               color: Colors.black87,

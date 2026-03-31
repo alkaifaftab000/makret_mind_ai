@@ -1,0 +1,621 @@
+[
+  {
+    "name": "Louis Devin Vector",
+    "description": "",
+    "images": [
+      "https://res.cloudinary.com/dz4muwh1c/image/upload/v1774784280/watch_sh0kxo.jpg",
+      "https://res.cloudinary.com/dz4muwh1c/image/upload/v1774784394/watch2_tgl8w4.jpg"
+    ],
+    "_id": "9df8720d-9dde-4012-950c-960fa6b73e32",
+    "brandId": "a2b2b390-9091-4995-91fd-ff7b3d1d0b53",
+    "videos": [
+      {
+        "id": "7a9ed310-0f0d-4cb1-b3b1-8ef574a9c336",
+        "status": "processing",
+        "config": {
+          "tone": "professional",
+          "aiModelId": null,
+          "aspectRatio": "mobile",
+          "duration": "10s",
+          "userPrompt": "string"
+        },
+        "scenes": [
+          {
+            "id": "3955a132-82f5-47d3-a7aa-b2071cddfcdd",
+            "prompt": "Ultra realistic 8k cinematic shot 1 for product Louis Devin Vector. string",
+            "description": "Scene 1 zooming and focusing on the professional aspect of the product.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 0,
+            "durationSeconds": 3
+          },
+          {
+            "id": "03320f46-d382-4b2b-93e7-65d0be107146",
+            "prompt": "Ultra realistic 8k cinematic shot 2 for product Louis Devin Vector. string",
+            "description": "Scene 2 zooming and focusing on the professional aspect of the product.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 1,
+            "durationSeconds": 3
+          },
+          {
+            "id": "39c61f8f-1d30-44b7-b0a0-642a486f8333",
+            "prompt": "Ultra realistic 8k cinematic shot 3 for product Louis Devin Vector. string",
+            "description": "Scene 3 zooming and focusing on the professional aspect of the product.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 2,
+            "durationSeconds": 4
+          }
+        ],
+        "taskId": null,
+        "finalVideoUrl": null,
+        "createdAt": "2026-03-29T16:03:34.315000",
+        "error": null
+      },
+      {
+        "id": "f15cb388-e968-4e32-9422-ad6401e8c0dd",
+        "status": "requires_approval",
+        "config": {
+          "tone": "professional",
+          "aiModelId": null,
+          "aspectRatio": "mobile",
+          "duration": "10s",
+          "userPrompt": "Please make this luxurious"
+        },
+        "scenes": [
+          {
+            "id": "5b4f88b7-f1e5-46d3-aa05-2a998c5dc592",
+            "prompt": "Ultra realistic 8k cinematic shot 1 for product Louis Devin Vector. Please make this luxurious",
+            "description": "Scene 1 zooming and focusing on the professional aspect of the product.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 0,
+            "durationSeconds": 3
+          },
+          {
+            "id": "6850ad0e-15ef-4e8d-a5d3-921fd5089e2a",
+            "prompt": "Ultra realistic 8k cinematic shot 2 for product Louis Devin Vector. Please make this luxurious",
+            "description": "Scene 2 zooming and focusing on the professional aspect of the product.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 1,
+            "durationSeconds": 3
+          },
+          {
+            "id": "c26b44c7-9d12-4f0c-9f02-252982508ee6",
+            "prompt": "Ultra realistic 8k cinematic shot 3 for product Louis Devin Vector. Please make this luxurious",
+            "description": "Scene 3 zooming and focusing on the professional aspect of the product.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 2,
+            "durationSeconds": 4
+          }
+        ],
+        "taskId": null,
+        "finalVideoUrl": null,
+        "createdAt": "2026-03-29T17:12:05.634000",
+        "error": null
+      },
+      {
+        "id": "c5453655-a82b-4fd0-8e35-5208168d26b3",
+        "status": "requires_approval",
+        "config": {
+          "tone": "professional",
+          "aiModelId": null,
+          "aspectRatio": "mobile",
+          "duration": "10s",
+          "userPrompt": "Please make this luxurious"
+        },
+        "scenes": [
+          {
+            "id": "db1abd8e-e954-4847-9224-fed3d1c35f29",
+            "prompt": "Ultra realistic 8k cinematic shot 1 for product Louis Devin Vector. Please make this luxurious",
+            "description": "Scene 1 zooming and focusing on the professional aspect of the product.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 0,
+            "durationSeconds": 3
+          },
+          {
+            "id": "f018c6fa-a7f6-4ad3-9c3e-29b81db6bf72",
+            "prompt": "Ultra realistic 8k cinematic shot 2 for product Louis Devin Vector. Please make this luxurious",
+            "description": "Scene 2 zooming and focusing on the professional aspect of the product.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 1,
+            "durationSeconds": 3
+          },
+          {
+            "id": "b7bde8d5-a736-4e49-9061-f611fa34d5ea",
+            "prompt": "Ultra realistic 8k cinematic shot 3 for product Louis Devin Vector. Please make this luxurious",
+            "description": "Scene 3 zooming and focusing on the professional aspect of the product.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 2,
+            "durationSeconds": 4
+          }
+        ],
+        "taskId": null,
+        "finalVideoUrl": null,
+        "createdAt": "2026-03-29T17:12:59.210000",
+        "error": null
+      },
+      {
+        "id": "ada1a859-d1e0-4b03-9dfa-cfb1c92de18d",
+        "status": "requires_approval",
+        "config": {
+          "tone": "professional",
+          "aiModelId": null,
+          "aspectRatio": "mobile",
+          "duration": "10s",
+          "userPrompt": "Please make this luxurious"
+        },
+        "scenes": [
+          {
+            "id": "812c6fe6-9ec8-4079-b535-20322a0f0f5a",
+            "prompt": "Ultra realistic 8k cinematic shot 1 for product Louis Devin Vector. Please make this luxurious",
+            "description": "Scene 1 zooming and focusing on the professional aspect of the product.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 0,
+            "durationSeconds": 3
+          },
+          {
+            "id": "eb4c87a8-3b53-4931-8cd0-aa5cbd023ea5",
+            "prompt": "Ultra realistic 8k cinematic shot 2 for product Louis Devin Vector. Please make this luxurious",
+            "description": "Scene 2 zooming and focusing on the professional aspect of the product.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 1,
+            "durationSeconds": 3
+          },
+          {
+            "id": "5aa8f832-4e73-4ed9-a5d5-3cb737d5da22",
+            "prompt": "Ultra realistic 8k cinematic shot 3 for product Louis Devin Vector. Please make this luxurious",
+            "description": "Scene 3 zooming and focusing on the professional aspect of the product.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 2,
+            "durationSeconds": 4
+          }
+        ],
+        "taskId": null,
+        "finalVideoUrl": null,
+        "createdAt": "2026-03-29T17:14:51.408000",
+        "error": null
+      },
+      {
+        "id": "ad7176d9-f6d6-4438-a955-fa3c03292fbd",
+        "status": "requires_approval",
+        "config": {
+          "tone": "professional",
+          "aiModelId": null,
+          "aspectRatio": "mobile",
+          "duration": "10s",
+          "userPrompt": "Please make this luxurious"
+        },
+        "scenes": [
+          {
+            "id": "426322cb-207f-463d-9647-8ec6ad262717",
+            "prompt": "Extremely close up, slow zoom out, of the intricate, polished silver mechanism of a luxury watch, gears perfectly intermeshing, subtle glinting under soft, focused studio lighting. The background is a blurred, dark, rich mahogany.",
+            "description": "Opens on the exquisite internal workings of a luxury watch, highlighting precision and craftsmanship.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 0,
+            "durationSeconds": 2
+          },
+          {
+            "id": "3ca16990-064f-4662-811a-efcf07c5f176",
+            "prompt": "Slow pan left across the elegant, matte black dial of the Louis Devin Vector watch, revealing the subtle branding and fine indices. The watch is resting on a dark, cool-toned marble surface, with a faint, sophisticated reflection. Professional, luxurious studio lighting.",
+            "description": "A graceful reveal of the watch face, emphasizing its refined design and brand identity.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 1,
+            "durationSeconds": 2
+          },
+          {
+            "id": "72fcd2d6-ffdb-415b-9c79-caedf5f7f4c5",
+            "prompt": "A sophisticated male hand, wearing a perfectly tailored dark suit cuff, gently adjusts the Louis Devin Vector watch on a wrist. Focus on the seamless fit of the strap and the watch case. The background is a subtly blurred office or boardroom setting, professional and opulent.",
+            "description": "Showcases the watch being worn, highlighting its comfort and elegance in a professional context.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 2,
+            "durationSeconds": 3
+          },
+          {
+            "id": "42b4e169-0259-47d4-a5f4-f0639c68fbc3",
+            "prompt": "A close-up shot of the Louis Devin Vector watch, now perfectly positioned on the wrist, with a soft, natural bokeh of a cityscape at twilight in the background through a large window. The watch catches the ambient light, sparkling subtly. Text overlay fades in: 'LOUIS DEVIN VECTOR'.",
+            "description": "Positions the watch as part of a successful, cosmopolitan lifestyle, with brand name reveal.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 3,
+            "durationSeconds": 3
+          }
+        ],
+        "taskId": null,
+        "finalVideoUrl": null,
+        "createdAt": "2026-03-29T17:31:44.258000",
+        "error": null
+      },
+      {
+        "id": "969ced12-c0db-40e5-92e1-0e697b41fb65",
+        "status": "requires_approval",
+        "config": {
+          "tone": "professional",
+          "aiModelId": null,
+          "aspectRatio": "mobile",
+          "duration": "10s",
+          "userPrompt": "Luxiourios presentation of the product,"
+        },
+        "scenes": [
+          {
+            "id": "689b710a-4b17-4671-9fcb-e65b2e40807d",
+            "prompt": "Extremely close-up shot of the Louis Devin Vector watch face, showcasing intricate details, polished metal, and a subtle reflection of diffused studio lighting. The background is a velvety deep blue, slightly out of focus. Professional, luxurious. High resolution, cinematic quality.",
+            "description": "Opens with an extreme close-up, immediately highlighting the watch's craftsmanship and luxurious aesthetic.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 0,
+            "durationSeconds": 2
+          },
+          {
+            "id": "99d11d39-adfb-4dce-b294-97c2706e241a",
+            "prompt": "Slow, elegant pan across the side profile of the Louis Devin Vector watch, revealing its slimness and the refined texture of the strap. Soft, warm natural light gently caresses the watch. The background transitions to a blurred, sophisticated modern office interior. Professional, luxurious. High resolution, cinematic quality.",
+            "description": "A graceful pan transitions from the watch face to its elegant profile and strap, implying its sophisticated design.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 1,
+            "durationSeconds": 3
+          },
+          {
+            "id": "0033855f-48eb-4768-99a9-8a0b8b514097",
+            "prompt": "A distinguished professional's hand, wearing a perfectly tailored suit cuff, subtly adjusting the Louis Devin Vector on their wrist. Focus is on the watch and the precise movement of the hand. The backdrop is a subtly lit, dark wooden conference table. Professional, luxurious. High resolution, cinematic quality. (No face visible)",
+            "description": "A close-up of a professional wearing the watch, emphasizing its fit and presence on the wrist.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 2,
+            "durationSeconds": 3
+          },
+          {
+            "id": "d7e19dc3-1a98-4f27-8e28-9b4c872fb8aa",
+            "prompt": "The Louis Devin Vector watch lying impeccably on a polished, dark marble surface next to a high-end leather portfolio and a fountain pen. A soft, directed spotlight emphasizes the watch. The Louis Devin logo appears subtly in the background as an elegant watermark. Professional, luxurious. High resolution, cinematic quality. Fade to black.",
+            "description": "The watch is displayed as a statement piece in a professional, high-end setting, followed by a final brand reveal.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 3,
+            "durationSeconds": 2
+          }
+        ],
+        "taskId": null,
+        "finalVideoUrl": null,
+        "createdAt": "2026-03-29T18:20:05.968000",
+        "error": null
+      },
+      {
+        "id": "160ed76a-6660-4a17-b687-62739b84d134",
+        "status": "requires_approval",
+        "config": {
+          "tone": "professional",
+          "aiModelId": "seed-model-1",
+          "aspectRatio": "mobile",
+          "duration": "15s",
+          "userPrompt": "Make it highly cinematic and focus on the lifestyle aspect of the product. The model should look energetic."
+        },
+        "scenes": [
+          {
+            "id": "36a3c76e-4e74-4261-9dcc-f9a339e7d437",
+            "prompt": "Cinematic shot: Energetic male professional, mid-30s, dressed in a sharp, modern business suit, striding confidently through a sleek, sun-drenched architectural atrium. High-angle tracking shot following his purposeful walk. Golden hour lighting, creating dramatic shadows. The background is slightly blurred to keep focus on the subject. High-quality 8K video, film grain, anamorphic lens flare.",
+            "description": "Introduces our driven professional, exuding confidence and energy in a sophisticated setting.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 0,
+            "durationSeconds": 3
+          },
+          {
+            "id": "fad93c98-e914-4869-b5b3-f43d389a765a",
+            "prompt": "Close-up, seamless transition from previous scene: The energetic male professional's wrist, highlighting a sophisticated Louis Devin Vector watch. He glances at it with a subtle, appreciative smile while still in motion. The watch face is perfectly in focus, showing its intricate design. Soft, natural light emphasizes the watch's metallic gleam and craftsmanship. Shallow depth of field, sharp detail on the watch.",
+            "description": "A refined introduction to the Louis Devin Vector, showcasing its elegance and the wearer's appreciation.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 1,
+            "durationSeconds": 3
+          },
+          {
+            "id": "3c486f86-10c3-4803-ae27-fadf6af0b129",
+            "prompt": "Dynamic medium shot: The energetic professional, now in a high-tech, minimalist office. He is at a standing desk, confidently presenting to unseen colleagues on a large, futuristic display. His posture is powerful, eyes focused, with the Louis Devin Vector prominently visible on his wrist as he gestures. Fast-paced editing, subtle camera movement, bright, modern lighting. The background reflects innovation and success.",
+            "description": "Showcases the watch as an accessory for a high-achieving, decisive individual at the peak of his professional game.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 2,
+            "durationSeconds": 4
+          },
+          {
+            "id": "b0478690-5d90-4c83-bd3d-b48d63b6d563",
+            "prompt": "Wide, sweeping cinematic shot: The energetic professional, now outdoors, making an important, confident phone call on a rooftop terrace overlooking a stunning cityscape at dusk. The Louis Devin Vector catches the last rays of sunlight. He is smiling faintly, radiating composure and success. Drone shot, slow pan, epic scale, city lights beginning to twinkle. The watch is a subtle, yet visible, element of his successful lifestyle. Vignette on sides.",
+            "description": "Illustrates the watch as part of a successful, well-rounded lifestyle extending beyond the office.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 3,
+            "durationSeconds": 3
+          },
+          {
+            "id": "61ee9bbd-7512-4d8f-8661-a2334e9501a6",
+            "prompt": "Ultra close-up and final shot: The Louis Devin Vector watch face, perfectly still and centered, showcasing its refined details and the Louis Devin logo under soft, professional studio lighting. The brand name 'Louis Devin Vector' fades in elegantly below the watch. 'Define Your Moment' tagline appears below the brand name. Clean, minimalist background. High-resolution, crisp focus.",
+            "description": "A strong, memorable final impression of the product, reinforcing its brand and message.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 4,
+            "durationSeconds": 2
+          }
+        ],
+        "taskId": null,
+        "finalVideoUrl": null,
+        "createdAt": "2026-03-29T20:18:55.592000",
+        "error": null
+      },
+      {
+        "id": "0f8da10b-b63c-457d-94dd-5517c427e7bd",
+        "status": "failed",
+        "config": {
+          "tone": "professional",
+          "aiModelId": "seed-model-1",
+          "aspectRatio": "mobile",
+          "duration": "15s",
+          "userPrompt": "Make it highly cinematic and focus on the lifestyle aspect of the product. The model should look energetic."
+        },
+        "scenes": [
+          {
+            "id": "abd469f2-8025-437d-9546-7ee3f57f2b5e",
+            "prompt": "Opening shot: A sharp, close-up, cinematic shot of a sleek, modern, professional-looking Louis Devin Vector watch on a male model's wrist, glinting under soft, sophisticated lighting. The background is a subtly blurred, high-end office environment. Focus on the watch's intricate details and premium finish. Model's hand is in motion, reaching for a document.",
+            "description": "Introduces the Louis Devin Vector with an immediate focus on its elegant design and professional appeal in a dynamic setting.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 0,
+            "durationSeconds": 3
+          },
+          {
+            "id": "d5a384ce-2224-422b-a414-16c782447abb",
+            "prompt": "Seamless transition from previous shot: The male model, mid-30s, sharp suit, energetic and confident, quickly walks through a bustling, sunlit, modern city street, a high-rise office building in the background. The Louis Devin Vector is prominently displayed on his wrist as he gestures slightly. Camera tracking his movement, capturing his dynamic stride.",
+            "description": "Establishes the energetic, professional lifestyle associated with the watch. The model is active and successful in a vibrant urban environment.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 1,
+            "durationSeconds": 4
+          },
+          {
+            "id": "f8f8bfb8-51dd-4287-8451-77ace46f5ccf",
+            "prompt": "Cut to a low-angle shot: The model, still energetic, is shaking hands firmly with a business associate in a sleek, minimalist conference room. Both are smiling, conveying success and confidence. The Louis Devin Vector is clearly visible on the model's wrist, emphasizing its role in professional interactions. Natural, bright lighting. Slight camera movement to follow the handshake.",
+            "description": "Highlights the watch's integration into crucial professional moments, symbolizing success and strong connections.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 2,
+            "durationSeconds": 4
+          },
+          {
+            "id": "e1b15dcc-f27b-4cf4-8343-06d6df49042b",
+            "prompt": "Zoom in and pan across the watch: A high-angle, extreme close-up shot of the Louis Devin Vector watch face, showcasing its pristine glass, sophisticated dial, and the precise movement of its hands. The reflection of a clear, bright sky or a city skyline is subtly visible on the watch's surface. The model's hand is steady, showcasing the watch without distraction. Ends with a brand logo overlay and product name.",
+            "description": "A final, powerful visual emphasizing the watch's craftsmanship and aesthetic, reinforced by a successful, aspirational environment.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 3,
+            "durationSeconds": 4
+          }
+        ],
+        "taskId": null,
+        "finalVideoUrl": null,
+        "createdAt": "2026-03-29T20:20:58.313000",
+        "error": "Kling generation failed: Credits insufficient : Your current balance isn\u2019t enough to run this request. Please top up to continue."
+      },
+      {
+        "id": "e63eab96-37a8-442f-a291-37c4651a34cb",
+        "status": "completed",
+        "config": {
+          "tone": "professional",
+          "aiModelId": "seed-model-1",
+          "aspectRatio": "mobile",
+          "duration": "10s",
+          "userPrompt": "Make it highly cinematic and focus on the lifestyle aspect of the product. The model should look energetic."
+        },
+        "scenes": [
+          {
+            "id": "dce82269-8f05-45b3-a2de-a4daf27c0431",
+            "prompt": "A close-up, dynamic shot of a sleek, silver Louis Devin Vector watch on a male wrist, subtly reflecting city lights. The watch face is sharp and catches light. Camera slowly pulls back to reveal a confident, energetic man in a sophisticated business suit, striding purposefully through a modern, glass-filled skyscraper lobby at dawn. The light is golden, reflecting off surfaces. He moves with a sense of purpose and power. Extremely cinematic, professional grade, high-resolution.",
+            "description": "Introduces the watch on a driven professional, showcasing its elegance and integrating it into a powerful, aspirational lifestyle.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 0,
+            "durationSeconds": 3
+          },
+          {
+            "id": "a703abd1-7cdf-4641-bfc0-003d2ed78cf7",
+            "prompt": "Seamless transition from the lobby. The energetic man, now in a high-tech, minimalist office, quickly checks the Louis Devin Vector watch on his wrist while simultaneously gesturing towards a large, interactive display screen. His movements are sharp and precise. Focus on the watch as he moves, displaying its pristine design. The office is bathed in cool, ambient light, highlighting the watch's metallic finishes. The composition emphasizes precision and control. Professional grade, high-resolution.",
+            "description": "Highlights the watch's utility and design in a fast-paced, decision-making environment.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 1,
+            "durationSeconds": 3
+          },
+          {
+            "id": "e0cda809-bd0f-40cf-b239-5366fbca6633",
+            "prompt": "Continuing the smooth flow from the office. The energetic man, still in his business attire, stands confidently at a rooftop bar overlooking a sprawling city skyline at dusk. He raises an arm, subtly revealing the Louis Devin Vector watch glinting under the sophisticated ambient lighting of the bar. He makes eye contact with someone off-camera, a slight, knowing smile. The watch is presented as an essential accessory to success and relaxation. The city lights twinkle in the background, out of focus. Extremely cinematic, professional grade, high-resolution.",
+            "description": "Showcases the watch as a symbol of achievement and refined leisure, a seamless part of a successful lifestyle.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 2,
+            "durationSeconds": 4
+          }
+        ],
+        "taskId": "840788b1b2ebac88cc59ba6612a5bf54",
+        "finalVideoUrl": "https://tempfile.aiquickdraw.com/h/840788b1b2ebac88cc59ba6612a5bf54_1774816805.mp4",
+        "createdAt": "2026-03-29T20:33:35.566000",
+        "error": null
+      },
+      {
+        "id": "1bdf42a5-a45b-4bfe-b472-7935a15e6f72",
+        "status": "failed",
+        "config": {
+          "tone": "professional",
+          "aiModelId": "seed-model-1",
+          "aspectRatio": "mobile",
+          "duration": "10s",
+          "userPrompt": "Make it highly cinematic and focus on the lifestyle aspect of the product. The model should look energetic."
+        },
+        "scenes": [
+          {
+            "id": "0d82e166-5055-48a6-8d0b-cf20d3eeb402",
+            "prompt": "Dynamic close-up shot of a Louis Devin Vector, sleek design catching light, held by a confident, energetic professional, walking briskly through a modern, sunlit office lobby. The background is slightly blurred motion.",
+            "description": "Introduces the product with a focus on its design and association with a professional, dynamic individual.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 0,
+            "durationSeconds": 2
+          },
+          {
+            "id": "448b951f-624a-4d66-950a-debda3d93d22",
+            "prompt": "Energetic professional, impeccably dressed, carrying the Louis Devin Vector, steps out of a high-end luxury car, perhaps a polished black sedan. The sun glints off the product and the car. Smooth, confident movement, focus on the product in hand.",
+            "description": "Establishes a luxurious, aspirational lifestyle, showcasing the product in a premium setting.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 1,
+            "durationSeconds": 3
+          },
+          {
+            "id": "308cb775-d4a4-47a5-9041-e572d8c7f69e",
+            "prompt": "Fast-paced montage: first, the Louis Devin Vector resting on a pristine, minimalist desk with a laptop, then a quick shot of the professional presenting confidently in a modern conference room, the Vector subtly visible in his hand. The focus remains on the product and the associated professional success.",
+            "description": "Highlights the product's role in a high-stakes professional environment, implying efficiency and style.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 2,
+            "durationSeconds": 3
+          },
+          {
+            "id": "06859d29-b48f-4c41-bc1d-400ed5cb75ed",
+            "prompt": "Extreme close-up, slow-motion, of the Louis Devin Vector being placed meticulously onto a smooth, reflective surface, followed by a slight camera pull-back revealing the energetic professional reaching for it, exuding quiet confidence. Soft, professional lighting.",
+            "description": "A final, powerful shot emphasizing the product's refined nature and its owner's self-assuredness.",
+            "videoUrl": null,
+            "status": "pending",
+            "order": 3,
+            "durationSeconds": 2
+          }
+        ],
+        "taskId": null,
+        "finalVideoUrl": null,
+        "createdAt": "2026-03-29T20:35:29.357000",
+        "error": "Kling generation failed: Credits insufficient : Your current balance isn\u2019t enough to run this request. Please top up to continue."
+      }
+    ],
+    "posters": [
+      {
+        "id": "b78d5f40-f79e-45d4-8096-f65eb326c085",
+        "status": "processing",
+        "config": {
+          "aspectRatio": "9:16",
+          "resolution": "1K",
+          "outputFormat": "png",
+          "style": "Cyberpunk and futuristic with neon purple lighting",
+          "overlayText": "The product details with social media posts..",
+          "aiModelId": null,
+          "modelExpression": null,
+          "modelPose": null
+        },
+        "taskId": "2c68c6b6105960b2399573a15dd48737",
+        "resultUrl": null,
+        "createdAt": "2026-03-29T17:53:41.559000",
+        "error": null
+      },
+      {
+        "id": "0fd55f93-84a7-499a-9900-ce6e35f70ac1",
+        "status": "processing",
+        "config": {
+          "aspectRatio": "9:16",
+          "resolution": "1K",
+          "outputFormat": "png",
+          "style": "ultra realistic 4K stylish solid photo shoot style",
+          "overlayText": "The product details with social media posts..",
+          "aiModelId": null,
+          "modelExpression": null,
+          "modelPose": null
+        },
+        "taskId": "5b61265496ce18f9dac132ab01f9fd9b",
+        "resultUrl": null,
+        "createdAt": "2026-03-29T18:00:54.161000",
+        "error": null
+      },
+      {
+        "id": "826f49d8-9524-4499-8984-8d9b6743751e",
+        "status": "completed",
+        "config": {
+          "aspectRatio": "9:16",
+          "resolution": "1K",
+          "outputFormat": "png",
+          "style": "ultra realistic 4K stylish solid photo shoot style",
+          "overlayText": "The product details with social media posts..",
+          "aiModelId": null,
+          "modelExpression": null,
+          "modelPose": null
+        },
+        "taskId": "e145d3fc07b94b5f23a6ed9686740f1f",
+        "resultUrl": "https://tempfile.aiquickdraw.com/images/1774808174191-ccg4jt1taqr.png",
+        "createdAt": "2026-03-29T18:14:45.426000",
+        "error": null
+      },
+      {
+        "id": "70f49589-88d6-4f55-9032-75d61f16f50b",
+        "status": "completed",
+        "config": {
+          "aspectRatio": "9:16",
+          "resolution": "1K",
+          "outputFormat": "png",
+          "style": "ultra realistic 4K stylish solid photo shoot style",
+          "overlayText": "The product details with social media posts..",
+          "aiModelId": null,
+          "modelExpression": null,
+          "modelPose": null
+        },
+        "taskId": "32184ab40783146fc701b5af7012651d",
+        "resultUrl": "https://tempfile.aiquickdraw.com/images/1774808397426-57qcucd8gyb.png",
+        "createdAt": "2026-03-29T18:19:01.405000",
+        "error": null
+      },
+      {
+        "id": "9778123a-be2d-4672-912d-d85f40944c24",
+        "status": "completed",
+        "config": {
+          "aspectRatio": "9:16",
+          "resolution": "1K",
+          "outputFormat": "png",
+          "style": "ultra realistic 4K stylish solid photo shoot style",
+          "overlayText": "The product details with social media posts..",
+          "aiModelId": null,
+          "modelExpression": null,
+          "modelPose": null
+        },
+        "taskId": "8b2a628143531d9ab738f0f61776fcbd",
+        "resultUrl": "https://tempfile.aiquickdraw.com/images/1774809511167-s3n4a5bbtf.png",
+        "createdAt": "2026-03-29T18:36:48.185000",
+        "error": null
+      },
+      {
+        "id": "63bee053-0664-4a34-8796-436d7c571fbf",
+        "status": "completed",
+        "config": {
+          "aspectRatio": "9:16",
+          "resolution": "1K",
+          "outputFormat": "jpeg",
+          "style": "Rescued Studio Image",
+          "overlayText": null,
+          "aiModelId": null,
+          "modelExpression": null,
+          "modelPose": null
+        },
+        "taskId": "8091c1bdcc8eb6ea712a910f3b8dd862",
+        "resultUrl": "https://tempfile.aiquickdraw.com/na2/8091c1bdcc8eb6ea712a910f3b8dd8621166661.jpeg",
+        "createdAt": "2026-03-29T21:30:28.173824",
+        "error": null
+      }
+    ],
+    "studioImages": [],
+    "createdAt": "2026-03-29T11:56:51.303000",
+    "updatedAt": null
+  }
+]

@@ -8,7 +8,6 @@ import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/models/brand_model.dart';
 import 'package:market_mind/screens/ai_studio/ai_studio_screen.dart';
 import 'package:market_mind/screens/brand_details/brand_details_screen.dart';
-import 'package:market_mind/screens/product/product_screen.dart';
 import 'package:market_mind/screens/poster_generator/poster_main_screen.dart';
 import 'package:market_mind/screens/video_generator/video_main_screen.dart';
 import 'package:market_mind/services/brand_service.dart';
@@ -194,13 +193,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                       FadeSlideRoute(page: BrandDetailsScreen(brand: brand)),
                                     );
                                     if (refresh == true) _loadBrands();
-                                  },
-                                  onProductTap: () async {
-                                    await Navigator.push(
-                                      context,
-                                      FadeSlideRoute(page: ProductScreen(brand: brand)),
-                                    );
-                                    _loadBrands();
                                   },
                                 ),
                               ),
@@ -585,14 +577,12 @@ class _HorizontalBrandCard extends StatelessWidget {
   final bool isDark;
   final List<Color> gradientColors;
   final VoidCallback onTap;
-  final VoidCallback onProductTap;
 
   const _HorizontalBrandCard({
     required this.brand,
     required this.isDark,
     required this.gradientColors,
     required this.onTap,
-    required this.onProductTap,
   });
 
   @override
@@ -641,25 +631,6 @@ class _HorizontalBrandCard extends StatelessWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    GestureDetector(
-                      onTap: onProductTap,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.buttonPrimary.withValues(alpha: 0.85),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          AppStrings.createProduct,
-                          style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
                       ),
                     ),
                   ],

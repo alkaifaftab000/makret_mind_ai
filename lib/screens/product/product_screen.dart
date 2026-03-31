@@ -14,6 +14,7 @@ import 'package:market_mind/services/product_service.dart';
 import 'package:market_mind/utils/app_notification.dart';
 import 'package:market_mind/utils/image_utils.dart';
 import 'package:market_mind/utils/permission_utils.dart';
+import 'package:market_mind/widgets/product_card.dart';
 
 class ProductScreen extends StatefulWidget {
   final BrandModel brand;
@@ -102,7 +103,7 @@ class _ProductScreenState extends State<ProductScreen> {
                   mainAxisSpacing: 12,
                   childAspectRatio: 0.85,
                 ),
-                itemBuilder: (_, index) => _ProductCard(
+                  itemBuilder: (_, index) => ProductCard(
                   product: _products[index],
                   isDark: isDark,
                   onTap: () async {
@@ -716,118 +717,6 @@ class _DropdownBlock extends StatelessWidget {
   }
 }
 
-class _ProductCard extends StatelessWidget {
-  final ProductModel product;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  const _ProductCard({
-    required this.product,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final preview = product.imagePaths.isNotEmpty
-        ? product.imagePaths.first
-        : null;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: preview != null
-                  ? (preview.startsWith('http')
-                        ? Image.network(
-                            preview,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: isDark
-                                  ? AppColors.darkCard
-                                  : AppColors.lightCard,
-                              child: const Center(
-                                child: Icon(Icons.image_not_supported_rounded),
-                              ),
-                            ),
-                          )
-                        : Image.file(
-                            File(preview),
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                          ))
-                  : Container(
-                      color: isDark ? AppColors.darkCard : AppColors.lightCard,
-                      child: const Center(
-                        child: Icon(Icons.image_not_supported_rounded),
-                      ),
-                    ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.1),
-                    Colors.black.withValues(alpha: 0.5),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              left: 10,
-              right: 10,
-              bottom: 10,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    '${product.type.toUpperCase()} • ${product.videoLength ?? '-'} • ${product.aspectRatio == 'custom' ? product.customAspectRatio : product.aspectRatio}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _EmptyProductsState extends StatelessWidget {
   final bool isDark;

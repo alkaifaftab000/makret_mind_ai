@@ -42,31 +42,106 @@ class ProductScene {
   }
 }
 
+class VideoJob {
+  final String id;
+  final String status;
+  final String? finalVideoUrl;
+  final DateTime createdAt;
+  final List<ProductScene> scenes;
+
+  const VideoJob({
+    required this.id,
+    required this.status,
+    this.finalVideoUrl,
+    required this.createdAt,
+    required this.scenes,
+  });
+
+  factory VideoJob.fromJson(Map<String, dynamic> json) {
+    final rawScenes = json['scenes'] as List<dynamic>?;
+    return VideoJob(
+      id: json['id']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'pending',
+      finalVideoUrl: json['finalVideoUrl']?.toString(),
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at'].toString())
+          : (json['createdAt'] != null ? DateTime.parse(json['createdAt'].toString()) : DateTime.now()),
+      scenes: rawScenes?.map((e) => ProductScene.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'status': status,
+      'finalVideoUrl': finalVideoUrl,
+      'createdAt': createdAt.toIso8601String(),
+      'scenes': scenes.map((s) => s.toJson()).toList(),
+    };
+  }
+}
+
+class PosterJob {
+  final String id;
+  final String status;
+  final String? resultUrl;
+  final DateTime createdAt;
+
+  const PosterJob({
+    required this.id,
+    required this.status,
+    this.resultUrl,
+    required this.createdAt,
+  });
+
+  factory PosterJob.fromJson(Map<String, dynamic> json) {
+    return PosterJob(
+      id: json['id']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'pending',
+      resultUrl: json['resultUrl']?.toString(),
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at'].toString())
+          : (json['createdAt'] != null ? DateTime.parse(json['createdAt'].toString()) : DateTime.now()),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'status': status,
+      'resultUrl': resultUrl,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+}
+
 class ProductModel {
   final String id;
   final String brandId;
   final String name;
-  final List<String> imagePaths; // API uses 'images'
+  final List<String> imagePaths;
   
   // Config fields
   final String tone;
-  final String modelType; // API uses 'aiModel'
+  final String modelType;
   final String aspectRatio;
-  final String videoLength; // API uses 'duration'
-  final String prompt; // API uses 'userPrompt'
+  final String videoLength;
+  final String prompt;
 
-  // Backend generated fields
+  // Media jobs
+  final List<VideoJob> videoJobs;
+  final List<PosterJob> posterJobs;
+
+  // Global state
   final String status;
-  final List<ProductScene> scenes;
-  final String? finalVideoUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  // We map 'type' and 'audioType' which might be local-only or derived
-  final String type; // poster or video (derive from videoLength/scenes etc or keep local default)
-  final String audioType; // local UI field for now
-
-  // Add customAspectRatio for backwards comp.
+  // Backward comp
+  final List<ProductScene> scenes;
+  final String? finalVideoUrl;
+  final String type;
+  final String audioType;
   final String? customAspectRatio;
 
   const ProductModel({
@@ -79,39 +154,52 @@ class ProductModel {
     required this.aspectRatio,
     required this.videoLength,
     required this.prompt,
+    required this.videoJobs,
+    required this.posterJobs,
     required this.status,
-    required this.scenes,
-    this.finalVideoUrl,
     required this.createdAt,
     required this.updatedAt,
-    this.type = 'video', // default for backward compat
-    this.audioType = 'none', // default
+    this.scenes = const [],
+    this.finalVideoUrl,
+    this.type = 'video',
+    this.audioType = 'none',
     this.customAspectRatio,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     final Map<String, dynamic> config = json['config'] as Map<String, dynamic>? ?? {};
     
+    final List<dynamic> videosRaw = json['videos'] as List<dynamic>? ?? [];
+    final List<dynamic> postersRaw = json['posters'] as List<dynamic>? ?? [];
+
+    final List<VideoJob> parsedVideoJobs = videosRaw.map((v) => VideoJob.fromJson(v as Map<String, dynamic>)).toList();
+    final List<PosterJob> parsedPosterJobs = postersRaw.map((p) => PosterJob.fromJson(p as Map<String, dynamic>)).toList();
+    
+    final Map<String, dynamic>? firstVideo = videosRaw.isNotEmpty ? videosRaw.first as Map<String, dynamic>? : null;
+    
+    final String? parsedFinalVideoUrl = firstVideo?['finalVideoUrl']?.toString() ?? json['finalVideoUrl']?.toString();
+    final List<dynamic>? rawScenes = firstVideo?['scenes'] as List<dynamic>? ?? json['scenes'] as List<dynamic>?;
+    
+    final bool hasVideos = parsedVideoJobs.isNotEmpty || parsedFinalVideoUrl != null || (rawScenes?.isNotEmpty ?? false);
+
     return ProductModel(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       brandId: json['brandId']?.toString() ?? json['brand_id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       imagePaths: (json['images'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
       
-      // Parse Config
       tone: config['tone']?.toString() ?? 'professional',
       modelType: config['aiModel']?.toString() ?? 'standard',
       aspectRatio: config['aspectRatio']?.toString() ?? 'mobile',
       videoLength: config['duration']?.toString() ?? 'short',
       prompt: config['userPrompt']?.toString() ?? '',
       
-      // Top level states
+      videoJobs: parsedVideoJobs,
+      posterJobs: parsedPosterJobs,
+
       status: json['status']?.toString() ?? 'draft',
-      scenes: (json['scenes'] as List<dynamic>?)
-              ?.map((e) => ProductScene.fromJson(e as Map<String, dynamic>))
-              .toList() ?? 
-          [],
-      finalVideoUrl: json['finalVideoUrl']?.toString(),
+      scenes: rawScenes?.map((e) => ProductScene.fromJson(e as Map<String, dynamic>)).toList() ?? [],
+      finalVideoUrl: parsedFinalVideoUrl,
       
       createdAt: json['created_at'] != null 
           ? DateTime.parse(json['created_at'].toString())
@@ -120,8 +208,7 @@ class ProductModel {
           ? DateTime.parse(json['updated_at'].toString())
           : (json['updatedAt'] != null ? DateTime.parse(json['updatedAt'].toString()) : DateTime.now()),
       
-      // Backward Compat mappings (optional logic)
-      type: json['finalVideoUrl'] != null || (json['scenes']?.isNotEmpty ?? false) ? 'video' : 'poster',
+      type: hasVideos ? 'video' : 'poster',
     );
   }
 
@@ -138,6 +225,8 @@ class ProductModel {
       },
       'brandId': brandId,
       'status': status,
+      'videos': videoJobs.map((v) => v.toJson()).toList(),
+      'posters': posterJobs.map((p) => p.toJson()).toList(),
       'scenes': scenes.map((s) => s.toJson()).toList(),
       if (finalVideoUrl != null) 'finalVideoUrl': finalVideoUrl,
     };
@@ -152,6 +241,8 @@ class ProductModel {
     String? videoLength,
     String? prompt,
     String? status,
+    List<VideoJob>? videoJobs,
+    List<PosterJob>? posterJobs,
     List<ProductScene>? scenes,
     String? finalVideoUrl,
     DateTime? updatedAt,
@@ -166,6 +257,8 @@ class ProductModel {
       aspectRatio: aspectRatio ?? this.aspectRatio,
       videoLength: videoLength ?? this.videoLength,
       prompt: prompt ?? this.prompt,
+      videoJobs: videoJobs ?? this.videoJobs,
+      posterJobs: posterJobs ?? this.posterJobs,
       status: status ?? this.status,
       scenes: scenes ?? this.scenes,
       finalVideoUrl: finalVideoUrl ?? this.finalVideoUrl,
