@@ -745,9 +745,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   // ─── Shared product list ────────────────────────────────────────
   Widget _buildProductList(List<ProductModel> products, bool isDark, IconData typeIcon, String productType) {
-    return ListView.separated(
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.85,
+      ),
       itemCount: products.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final product = products[index];
         return _ProductTile(
@@ -789,90 +794,163 @@ class _ProductTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : AppColors.lightCard,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: _statusColor.withValues(alpha: 0.15),
-          ),
-          child: product.images.isNotEmpty && product.images.first.startsWith('http')
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    product.images.first,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Icon(typeIcon, color: _statusColor, size: 24),
-                  ),
-                )
-              : Icon(typeIcon, color: _statusColor, size: 24),
+    String? displayImageUrl;
+    bool isResultImage = false;
+
+    // Prioritize showing the actual generated result if available
+    if (productType == 'poster' &&
+        product.latestPoster?.resultUrl != null &&
+        product.latestPoster!.resultUrl!.isNotEmpty) {
+      displayImageUrl = product.latestPoster!.resultUrl;
+      isResultImage = true;
+    } else if (product.images.isNotEmpty && product.images.first.startsWith('http')) {
+      displayImageUrl = product.images.first;
+    }
+
+    return GestureDetector(
+      onTap: () {
+        if (productType == 'video') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => VideoConfigScreen(product: product),
+            ),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PosterConfigScreen(product: product),
+            ),
+          );
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        title: Text(
-          product.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-          ),
-        ),
-        subtitle: Row(
+        child: Stack(
           children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: _statusColor,
-                shape: BoxShape.circle,
+            // ─── Background Image ─────────────────────────
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                child: displayImageUrl != null
+                    ? Image.network(
+                        displayImageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Center(
+                          child: Icon(typeIcon, color: _statusColor, size: 40),
+                        ),
+                      )
+                    : Center(
+                        child: Icon(typeIcon, color: _statusColor, size: 40),
+                      ),
               ),
             ),
-            const SizedBox(width: 6),
-            Text(
-              '${product.images.length} images',
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+            // ─── Gradient Overlay ─────────────────────────
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.7),
+                  ],
+                ),
+              ),
+            ),
+            // ─── Content ──────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Top Row: Status badge
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: _statusColor.withValues(alpha: 0.5)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: _statusColor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isResultImage ? 'Generated' : 'Source',
+                              style: GoogleFonts.poppins(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Bottom Row: Title & Info
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(typeIcon, size: 12, color: Colors.white70),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${product.images.length} Inputs',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              color: Colors.white70,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
         ),
-        trailing: Icon(
-          Icons.arrow_forward_ios_rounded,
-          size: 16,
-          color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
-        ),
-        onTap: () {
-          if (productType == 'video') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => VideoConfigScreen(product: product),
-              ),
-            );
-          } else {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PosterConfigScreen(product: product),
-              ),
-            );
-          }
-        },
       ),
     );
   }

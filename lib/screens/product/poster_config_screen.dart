@@ -431,8 +431,9 @@ class _PosterConfigScreenState extends State<PosterConfigScreen> {
             ],
 
             // ─── Config Section ─────────────────────
-            Container(
-              padding: const EdgeInsets.all(16),
+            if (_activePosters.isEmpty && _completedPosters.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkCard : AppColors.lightCard,
                 borderRadius: BorderRadius.circular(16),
