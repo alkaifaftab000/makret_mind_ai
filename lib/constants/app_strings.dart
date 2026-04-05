@@ -29,13 +29,16 @@ class AppStrings {
   static const String noAccount = 'No account yet? ';
   static const String alreadyHaveAccount = 'Already have an account? ';
 
-  static const String homeTitle = 'Brands';
+  static const String homeTitle = 'Home';
   static const String searchTitle = 'Search';
   static const String templatesTitle = 'Templates';
   static const String profileTitle = 'Profile';
 
   static const String searchBrandsHint = 'Search brands...';
   static const String searchAllHint = 'Search brands, products, posters...';
+  static const String searchVideosHint = 'Search videos...';
+  static const String searchPostersHint = 'Search posters...';
+  static const String searchStudioHint = 'Search AI Studio jobs...';
   static const String searchTemplatesHint = 'Search templates...';
   static const String searchToGetResults = 'Search to get results';
   static const String noResultsFound = 'No results found';
@@ -47,6 +50,27 @@ class AppStrings {
   static const String noProductsYet = 'No Products Yet';
   static const String noProductsSubtitle =
       'Create your first product for this brand';
+
+  // Home tab labels
+  static const String tabVideo = 'Video';
+  static const String tabPoster = 'Poster';
+  static const String tabAIStudio = 'AI Studio';
+  static const String tabBrand = 'Brand';
+
+  // Home tab FAB labels
+  static const String generateVideo = 'Generate Video';
+  static const String generatePoster = 'Generate Poster';
+  static const String goToAIStudio = 'AI Studio';
+
+  // Home tab empty states
+  static const String noVideosYet = 'No Videos Yet';
+  static const String noVideosSubtitle = 'Generate your first AI video';
+  static const String noPostersYet = 'No Posters Yet';
+  static const String noPostersSubtitle = 'Create stunning AI posters';
+  static const String noStudioJobsYet = 'No Studio Jobs Yet';
+  static const String noStudioJobsSubtitle = 'Start creating with AI Studio';
+  static const String brandRequiredTitle = 'Brand Required';
+  static const String brandRequiredMessage = 'Create at least one brand before generating content';
 
   static const String createBrand = '✨ Create Brand';
   static const String createProduct = 'Create Product';

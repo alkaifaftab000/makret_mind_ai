@@ -14,4 +14,18 @@ class ApiConstants {
   // Brand endpoints
   static const String brands = '/api/brands';
   static const String brandWithLogo = '/api/brands/with-logo';
+
+  // Product endpoints
+  static const String products = '/api/products';
+  static const String productsWithImages = '/api/products/with-images';
+
+  // AI Studio endpoints
+  static const String studioJobs = '/api/studio/jobs';
+  static const String studioSelect = '/api/studio/select';
+  static const String studioModels = '/api/studio/models';
+  static const String studioScenes = '/api/studio/scenes';
+
+  // App Data endpoints
+  static const String appData = '/api/app-data';
+  static const String appOptions = '/api/app-data/options';
 }
