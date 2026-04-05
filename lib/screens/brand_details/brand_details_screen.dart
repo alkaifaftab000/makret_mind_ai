@@ -1,13 +1,18 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:market_mind/constants/app_colors.dart';
 import 'package:market_mind/constants/app_strings.dart';
 import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/models/brand_model.dart';
 import 'package:market_mind/screens/brand_details/brand_service.dart';
 import 'package:market_mind/screens/product/product_screen.dart';
+import 'package:market_mind/services/brand_service.dart';
+import 'package:market_mind/services/cloudinary_service.dart';
 import 'package:market_mind/utils/app_notification.dart';
+import 'package:market_mind/utils/image_utils.dart';
+import 'package:market_mind/utils/permission_utils.dart';
 
 class BrandDetailsScreen extends StatefulWidget {
   final BrandModel brand;
@@ -422,19 +427,23 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
   }
 
   Future<void> _editBrand() async {
-    try {
-      final updated = await brandDetailsActionService.editBrand(brand: _brand);
-      if (!mounted) return;
+    final updatedBrand = await showModalBottomSheet<BrandModel>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _EditBrandSheet(brand: _brand),
+    );
+
+    if (updatedBrand != null && mounted) {
       setState(() {
-        _brand = updated;
+        _brand = updatedBrand;
       });
-      AppNotification.info(
+      AppNotification.success(
         context,
-        message: 'Edit flow will be connected next',
+        message: 'Brand updated successfully!',
       );
-    } catch (_) {
-      if (!mounted) return;
-      AppNotification.error(context, message: 'Unable to open edit right now');
     }
   }
 
@@ -577,6 +586,326 @@ class _OverlayIconButton extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.all(8),
           child: Icon(icon, color: Colors.white, size: 20),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Edit Brand Sheet ─────────────────────────────────────────────
+class _EditBrandSheet extends StatefulWidget {
+  final BrandModel brand;
+
+  const _EditBrandSheet({required this.brand});
+
+  @override
+  State<_EditBrandSheet> createState() => _EditBrandSheetState();
+}
+
+class _EditBrandSheetState extends State<_EditBrandSheet> {
+  late TextEditingController _nameController;
+  late TextEditingController _descController;
+  late TextEditingController _categoryController;
+  late TextEditingController _targetAudienceController;
+  bool _isSubmitting = false;
+  File? _selectedImageFile;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.brand.name);
+    _descController = TextEditingController(text: widget.brand.description ?? '');
+    _categoryController = TextEditingController(text: widget.brand.category ?? '');
+    _targetAudienceController = TextEditingController(text: widget.brand.targetAudience ?? '');
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final photoPermission = await PermissionUtils.requestPhotosPermission();
+      final storagePermission = await PermissionUtils.requestGalleryPermission();
+      if (!photoPermission && !storagePermission) {
+        if (!mounted) return;
+        AppNotification.warning(
+          context,
+          message: 'Permission required to access photos',
+        );
+        return;
+      }
+
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+      if (picked == null) return;
+
+      final savedPath = await ImageUtils.saveImage(File(picked.path));
+
+      if (!mounted) return;
+      setState(() {
+        _selectedImageFile = File(savedPath);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      AppNotification.error(context, message: 'Failed to pick image');
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descController.dispose();
+    _categoryController.dispose();
+    _targetAudienceController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      AppNotification.warning(context, message: 'Brand name is required');
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    try {
+      final oldCat = widget.brand.category ?? '';
+      final newCat = _categoryController.text.trim();
+      final categoryList = newCat != oldCat && newCat.isNotEmpty
+          ? newCat.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+          : null;
+
+      final oldAud = widget.brand.targetAudience ?? '';
+      final newAud = _targetAudienceController.text.trim();
+      final audienceList = newAud != oldAud && newAud.isNotEmpty
+          ? newAud.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+          : null;
+
+      String? finalLogoUrl;
+      if (_selectedImageFile != null) {
+        finalLogoUrl = await cloudinaryService.uploadImage(
+          _selectedImageFile!,
+          folder: 'brands',
+        );
+        if (finalLogoUrl == null) {
+          throw Exception('Failed to upload image');
+        }
+      }
+
+      final updated = await brandDetailsActionService.editBrand(
+        brand: widget.brand,
+        name: name != widget.brand.name ? name : null,
+        category: categoryList,
+        targetAudience: audienceList,
+        imagePath: finalLogoUrl,
+      );
+
+      final Map<String, dynamic> patchData = {};
+      if (name != widget.brand.name) patchData['name'] = name;
+      if (_descController.text.trim() != (widget.brand.description ?? '')) {
+        patchData['description'] = _descController.text.trim();
+      }
+      if (newCat != oldCat) {
+        patchData['category'] = newCat.isNotEmpty ? newCat.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : [];
+      }
+      if (newAud != oldAud) {
+        patchData['target_audience'] = newAud.isNotEmpty ? newAud.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : [];
+      }
+      // If we used editBrand, it handles logo. But patchData overrides.
+      if (finalLogoUrl != null) {
+        patchData['logo'] = finalLogoUrl;
+      }
+
+      BrandModel finalBrand = widget.brand;
+      if (patchData.isNotEmpty) {
+        finalBrand = await brandService.patchBrandRaw(id: widget.brand.id, data: patchData);
+      }
+
+      if (!mounted) return;
+      Navigator.pop(context, finalBrand);
+    } catch (e) {
+      if (!mounted) return;
+      AppNotification.error(context, message: 'Failed to update brand details');
+      setState(() => _isSubmitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        14,
+        16,
+        MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.textMutedLight.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Edit Brand',
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // ─── Image Picker ────────────────────────────────
+          Center(
+            child: GestureDetector(
+              onTap: _pickImage,
+              child: Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.divider.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: ClipOval(
+                  child: _selectedImageFile != null
+                      ? Image.file(
+                          _selectedImageFile!,
+                          fit: BoxFit.cover,
+                        )
+                      : (widget.brand.imagePath.startsWith('http')
+                          ? Image.network(
+                              widget.brand.imagePath,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.add_a_photo_rounded, size: 28),
+                            )
+                          : const Icon(Icons.add_a_photo_rounded, size: 28)),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: Text(
+              'Tap to change logo',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          _TextFieldLabel(label: 'Brand Name *', isDark: isDark),
+          _StyledTextField(controller: _nameController, isDark: isDark),
+          const SizedBox(height: 12),
+          
+          _TextFieldLabel(label: 'Description', isDark: isDark),
+          _StyledTextField(controller: _descController, isDark: isDark, maxLines: 3),
+          const SizedBox(height: 12),
+          
+          _TextFieldLabel(label: 'Category (comma separated)', isDark: isDark),
+          _StyledTextField(controller: _categoryController, isDark: isDark),
+          const SizedBox(height: 12),
+          
+          _TextFieldLabel(label: 'Target Audience (comma separated)', isDark: isDark),
+          _StyledTextField(controller: _targetAudienceController, isDark: isDark),
+          const SizedBox(height: 24),
+          
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text('Cancel', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _isSubmitting ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.buttonPrimary,
+                    foregroundColor: AppColors.buttonText,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.buttonText),
+                        )
+                      : Text('Save', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TextFieldLabel extends StatelessWidget {
+  final String label;
+  final bool isDark;
+  const _TextFieldLabel({required this.label, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        label,
+        style: GoogleFonts.poppins(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+        ),
+      ),
+    );
+  }
+}
+
+class _StyledTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final bool isDark;
+  final int maxLines;
+
+  const _StyledTextField({
+    required this.controller,
+    required this.isDark,
+    this.maxLines = 1,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      style: GoogleFonts.poppins(fontSize: 14),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: isDark ? AppColors.darkCard : AppColors.lightCard,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
       ),
     );

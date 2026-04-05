@@ -12,7 +12,6 @@ void main() async {
 
   // Initialize Hive
   await Hive.initFlutter();
-
   // Register adapters
   Hive.registerAdapter(BrandModelAdapter());
 
@@ -28,6 +27,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,

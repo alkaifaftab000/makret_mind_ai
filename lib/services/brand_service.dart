@@ -231,16 +231,23 @@ class BrandService {
     List<String>? targetAudience,
     List<String>? category,
   }) async {
+    final Map<String, dynamic> data = {};
+    if (name != null) data['name'] = name;
+    if (logo != null) data['logo'] = logo;
+    if (targetAudience != null) data['target_audience'] = targetAudience;
+    if (category != null) data['category'] = category;
+
+    return patchBrandRaw(id: id, data: data);
+  }
+
+  /// Patch brand with raw data map
+  Future<BrandModel> patchBrandRaw({
+    required String id,
+    required Map<String, dynamic> data,
+  }) async {
     try {
       _logger.i('Patching brand ID: $id');
       
-      final Map<String, dynamic> data = {};
-      if (name != null) data['name'] = name;
-      if (logo != null) data['logo'] = logo;
-      if (targetAudience != null) data['target_audience'] = targetAudience;
-      if (category != null) data['category'] = category;
-
-      // Don't make empty updates Request
       if (data.isEmpty) throw Exception('No fields to patch');
 
       final response = await _dio.patch(

@@ -10,6 +10,7 @@ import 'package:market_mind/models/brand_model.dart';
 import 'package:market_mind/models/product_model.dart';
 import 'package:market_mind/screens/product/poster_config_screen.dart';
 import 'package:market_mind/services/product_service.dart';
+import 'package:market_mind/services/cloudinary_service.dart';
 import 'package:market_mind/utils/app_notification.dart';
 import 'package:market_mind/utils/image_utils.dart';
 import 'package:market_mind/utils/permission_utils.dart';
@@ -100,6 +101,19 @@ class _ProductScreenState extends State<ProductScreen> {
                         ),
                       ),
                     );
+                  },
+                  onEdit: () async {
+                    final updated = await showModalBottomSheet<bool>(
+                      context: context,
+                      isScrollControlled: true,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                      ),
+                      builder: (_) => _EditProductSheet(product: _products[index]),
+                    );
+                    if (updated == true) {
+                      _loadProducts();
+                    }
                   },
                 ),
               ),
@@ -352,6 +366,236 @@ class _CreateProductSheetState extends State<_CreateProductSheet> {
   }
 }
 
+// ─── Edit Product Sheet ───────────────────────────────────────────
+class _EditProductSheet extends StatefulWidget {
+  final ProductModel product;
+
+  const _EditProductSheet({required this.product});
+
+  @override
+  State<_EditProductSheet> createState() => _EditProductSheetState();
+}
+
+class _EditProductSheetState extends State<_EditProductSheet> {
+  late TextEditingController _nameController;
+  late TextEditingController _descriptionController;
+  bool _isSubmitting = false;
+  final List<String> _selectedImagePaths = [];
+  bool _imagesChanged = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.product.name);
+    _descriptionController = TextEditingController(text: widget.product.description);
+    _selectedImagePaths.addAll(widget.product.images);
+  }
+
+  Future<void> _pickImages() async {
+    try {
+      final photoPermission = await PermissionUtils.requestPhotosPermission();
+      final storagePermission = await PermissionUtils.requestGalleryPermission();
+      if (!photoPermission && !storagePermission) {
+        if (!mounted) return;
+        AppNotification.warning(
+          context,
+          message: 'Permission required to access photos',
+        );
+        return;
+      }
+
+      final picker = ImagePicker();
+      final picked = await picker.pickMultiImage(imageQuality: 85);
+      if (picked.isEmpty) return;
+
+      final limited = picked.take(5).toList();
+      final saved = <String>[];
+
+      for (final file in limited) {
+        final path = await ImageUtils.saveImage(File(file.path));
+        saved.add(path);
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _selectedImagePaths
+          ..clear()
+          ..addAll(saved);
+        _imagesChanged = true;
+      });
+
+      if (picked.length > 5) {
+        AppNotification.info(
+          context,
+          message: 'Only first 5 images were selected',
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      AppNotification.error(context, message: 'Failed to pick images');
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      AppNotification.warning(context, message: 'Product name is required');
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final patchData = <String, dynamic>{};
+      if (name != widget.product.name) patchData['name'] = name;
+      final desc = _descriptionController.text.trim();
+      if (desc != widget.product.description) patchData['description'] = desc;
+
+      if (_imagesChanged) {
+        // Find newly added local files
+        final localFiles = _selectedImagePaths
+            .where((path) => !path.startsWith('http'))
+            .map((path) => File(path))
+            .toList();
+
+        List<String> uploadedUrls = [];
+        if (localFiles.isNotEmpty) {
+          uploadedUrls = await cloudinaryService.uploadMultipleImages(
+            localFiles,
+            folder: 'products',
+          );
+        }
+
+        final finalImageUrls = [
+          ..._selectedImagePaths.where((path) => path.startsWith('http')),
+          ...uploadedUrls,
+        ];
+        patchData['images'] = finalImageUrls;
+      }
+
+      if (patchData.isNotEmpty) {
+        await productService.patchProduct(
+          productId: widget.product.id,
+          data: patchData,
+        );
+      }
+
+      if (!mounted) return;
+      AppNotification.success(context, message: 'Product updated successfully');
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      AppNotification.error(context, message: 'Failed to update product');
+      setState(() => _isSubmitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        14,
+        16,
+        MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Edit Product',
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // ─── Post Images ───────────────────────────────
+          _UploadImagesField(
+            imagePaths: _selectedImagePaths,
+            onPick: _isSubmitting ? null : _pickImages,
+            isDark: isDark,
+          ),
+          const SizedBox(height: 14),
+          // ─── Product Name ──────────────────────────────
+          _TextFieldBlock(
+            label: 'Product Name *',
+            controller: _nameController,
+            hint: 'e.g., Summer Collection Sneakers',
+            isDark: isDark,
+          ),
+          const SizedBox(height: 10),
+          // ─── Description (optional) ────────────────────
+          _TextFieldBlock(
+            label: 'Description',
+            controller: _descriptionController,
+            hint: 'Brief description of your product...',
+            isDark: isDark,
+            maxLines: 3,
+          ),
+          const SizedBox(height: 18),
+          // ─── Buttons ───────────────────────────────────
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text('Cancel', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _isSubmitting ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.buttonPrimary,
+                    foregroundColor: AppColors.buttonText,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.buttonText),
+                        )
+                      : Text('Save', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Upload images component ──────────────────────────────────────
 class _UploadImagesField extends StatelessWidget {
   final List<String> imagePaths;
@@ -407,16 +651,36 @@ class _UploadImagesField extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 itemBuilder: (_, index) => ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: Image.file(
-                    File(imagePaths[index]),
-                    width: 96,
-                    height: 96,
-                    fit: BoxFit.cover,
-                  ),
+                  child: imagePaths[index].startsWith('http')
+                      ? Image.network(
+                          imagePaths[index],
+                          width: 96,
+                          height: 96,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _errorPlaceholder(),
+                        )
+                      : Image.file(
+                          File(imagePaths[index]),
+                          width: 96,
+                          height: 96,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _errorPlaceholder(),
+                        ),
                 ),
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemCount: imagePaths.length,
               ),
+      ),
+    );
+  }
+
+  Widget _errorPlaceholder() {
+    return Container(
+      width: 96,
+      height: 96,
+      color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+      child: const Center(
+        child: Icon(Icons.image_rounded, size: 28),
       ),
     );
   }
@@ -483,11 +747,13 @@ class _ProductCard extends StatelessWidget {
   final ProductModel product;
   final bool isDark;
   final VoidCallback onTap;
+  final VoidCallback onEdit;
 
   const _ProductCard({
     required this.product,
     required this.isDark,
     required this.onTap,
+    required this.onEdit,
   });
 
   @override
@@ -595,15 +861,26 @@ class _ProductCard extends StatelessWidget {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 14,
-                color: isDark
-                    ? AppColors.textSecondaryDark
-                    : AppColors.textSecondaryLight,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.edit_rounded,
+                    size: 18,
+                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  ),
+                  onPressed: onEdit,
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

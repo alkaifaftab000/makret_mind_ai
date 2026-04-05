@@ -750,7 +750,7 @@ class _VideoConfigScreenState extends State<VideoConfigScreen> {
 }
 
 // ─── Scene Editor Card (requires_approval) ─────────────────────────
-class _SceneEditorCard extends StatelessWidget {
+class _SceneEditorCard extends StatefulWidget {
   final VideoJob video;
   final bool isDark;
   final List<TextEditingController> controllers;
@@ -766,19 +766,32 @@ class _SceneEditorCard extends StatelessWidget {
   });
 
   @override
+  State<_SceneEditorCard> createState() => _SceneEditorCardState();
+}
+
+class _SceneEditorCardState extends State<_SceneEditorCard> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final accentColor = isDark ? const Color(0xFF8B87FF) : AppColors.buttonPrimary;
-    final accentBg = isDark
+    final accentColor = widget.isDark ? const Color(0xFF8B87FF) : AppColors.buttonPrimary;
+    final accentBg = widget.isDark
         ? const Color(0xFF8B87FF).withValues(alpha: 0.1)
         : AppColors.buttonPrimary.withValues(alpha: 0.06);
-    final accentBorder = isDark
+    final accentBorder = widget.isDark
         ? const Color(0xFF8B87FF).withValues(alpha: 0.25)
         : AppColors.buttonPrimary.withValues(alpha: 0.18);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : AppColors.lightCard,
+        color: widget.isDark ? AppColors.darkCard : AppColors.lightCard,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: accentBorder, width: 1.5),
         boxShadow: [
@@ -825,16 +838,16 @@ class _SceneEditorCard extends StatelessWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: isDark
+                          color: widget.isDark
                               ? AppColors.textPrimaryDark
                               : AppColors.textPrimaryLight,
                         ),
                       ),
                       Text(
-                        '${video.scenes.length} clips  •  ${video.config?.duration ?? '?'} total',
+                        '${widget.video.scenes.length} clips  •  ${widget.video.config?.duration ?? '?'} total',
                         style: GoogleFonts.poppins(
                           fontSize: 11,
-                          color: isDark
+                          color: widget.isDark
                               ? AppColors.textMutedDark
                               : AppColors.textMutedLight,
                         ),
@@ -870,20 +883,22 @@ class _SceneEditorCard extends StatelessWidget {
           ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 480),
             child: Scrollbar(
+              controller: _scrollController,
               thumbVisibility: true,
               child: SingleChildScrollView(
+                controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                 child: Column(
-                  children: List.generate(video.scenes.length, (i) {
-                    final scene = video.scenes[i];
+                  children: List.generate(widget.video.scenes.length, (i) {
+                    final scene = widget.video.scenes[i];
                     final controller =
-                        i < controllers.length ? controllers[i] : null;
+                        i < widget.controllers.length ? widget.controllers[i] : null;
                     return _SceneEditorTile(
                       scene: scene,
                       index: i,
-                      totalScenes: video.scenes.length,
+                      totalScenes: widget.video.scenes.length,
                       controller: controller,
-                      isDark: isDark,
+                      isDark: widget.isDark,
                     );
                   }),
                 ),
@@ -892,7 +907,7 @@ class _SceneEditorCard extends StatelessWidget {
           ),
 
           // ── Config chips ──────────────────────────────
-          if (video.config != null)
+          if (widget.video.config != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
               child: Wrap(
@@ -900,19 +915,19 @@ class _SceneEditorCard extends StatelessWidget {
                 runSpacing: 6,
                 children: [
                   _ConfigChip(
-                    label: video.config!.tone,
+                    label: widget.video.config!.tone,
                     icon: Icons.record_voice_over_rounded,
-                    isDark: isDark,
+                    isDark: widget.isDark,
                   ),
                   _ConfigChip(
-                    label: video.config!.aspectRatio,
+                    label: widget.video.config!.aspectRatio,
                     icon: Icons.crop_rounded,
-                    isDark: isDark,
+                    isDark: widget.isDark,
                   ),
                   _ConfigChip(
-                    label: video.config!.duration,
+                    label: widget.video.config!.duration,
                     icon: Icons.timer_rounded,
-                    isDark: isDark,
+                    isDark: widget.isDark,
                   ),
                 ],
               ),
@@ -924,8 +939,8 @@ class _SceneEditorCard extends StatelessWidget {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: isApproving ? null : onApprove,
-                icon: isApproving
+                onPressed: widget.isApproving ? null : widget.onApprove,
+                icon: widget.isApproving
                     ? const SizedBox(
                         width: 16,
                         height: 16,
@@ -936,7 +951,7 @@ class _SceneEditorCard extends StatelessWidget {
                       )
                     : const Icon(Icons.rocket_launch_rounded, size: 18),
                 label: Text(
-                  isApproving
+                  widget.isApproving
                       ? 'Approving...'
                       : 'Approve & Generate Video',
                   style: GoogleFonts.poppins(
@@ -995,12 +1010,21 @@ class _SceneEditorTile extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: fieldFill,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.divider.withValues(alpha: isDark ? 0.08 : 0.15),
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Scene header row ───────────────────────
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Clip badge
               Container(
@@ -1024,51 +1048,43 @@ class _SceneEditorTile extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
               // Duration badge
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
+                  horizontal: 10,
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.darkCardAlt
-                      : AppColors.lightBackground,
+                  color: isDark ? AppColors.darkCard : AppColors.lightBackground,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: AppColors.divider.withValues(alpha: 0.22),
+                    color: AppColors.divider.withValues(alpha: 0.12),
                   ),
                 ),
                 child: Text(
                   '${scene.durationSeconds}s',
                   style: GoogleFonts.poppins(
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? AppColors.textMutedDark
-                        : AppColors.textMutedLight,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              // Description — Flexible so it never overflows
-              Flexible(
-                child: Text(
-                  scene.description,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(
-                    fontSize: 10,
-                    color: isDark
-                        ? AppColors.textMutedDark
-                        : AppColors.textMutedLight,
+                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          
+          // ── Scene Description ────────────────────────
+          Text(
+            scene.description,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              height: 1.4,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 12),
 
           // ── Editable prompt ─────────────────────────
           if (controller != null)
@@ -1080,8 +1096,8 @@ class _SceneEditorTile extends StatelessWidget {
                 fontSize: 12,
                 height: 1.5,
                 color: isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimaryLight,
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
               ),
               decoration: InputDecoration(
                 hintText: 'Edit the AI prompt for this clip...',
@@ -1092,33 +1108,27 @@ class _SceneEditorTile extends StatelessWidget {
                       : AppColors.textMutedLight,
                 ),
                 filled: true,
-                fillColor: fieldFill,
+                fillColor: isDark ? AppColors.darkBackground : Colors.white,
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
+                  horizontal: 14,
+                  vertical: 12,
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: fieldBorder),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: fieldBorder),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
                     color: fieldFocusBorder,
                     width: 1.5,
                   ),
                 ),
               ),
-            ),
-
-          if (!isLast)
-            Divider(
-              height: 20,
-              color: AppColors.divider.withValues(alpha: 0.15),
             ),
         ],
       ),

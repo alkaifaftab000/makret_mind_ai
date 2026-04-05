@@ -128,29 +128,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               },
             ),
 
-            // Skip button at top right
+            // Skip button at bottom left
             if (_currentIndex < AppStrings.onboardingItems.length - 1)
               Positioned(
-                top: 15,
-                right: 23,
+                bottom: 28,
+                left: 24,
                 child: GestureDetector(
                   onTap: _onSkip,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.darkBackground,
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: Text(
-                      AppStrings.onboardingSkip,
-                      style: AppTextStyles.smallMuted(context, isDark).copyWith(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  child: Text(
+                    AppStrings.onboardingSkip,
+                    style: AppTextStyles.smallMuted(context, isDark).copyWith(
+                      color: isDark ? Colors.white70 : Colors.black54,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
