@@ -43,16 +43,6 @@ class _ProductScreenState extends State<ProductScreen> {
   }
 
   Future<void> _startCreateProductFlow() async {
-    final type = await showModalBottomSheet<String>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => const _ProductTypeSheet(),
-    );
-
-    if (type == null || !mounted) return;
-
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -61,23 +51,8 @@ class _ProductScreenState extends State<ProductScreen> {
       ),
       builder: (_) => _CreateProductSheet(
         brandId: widget.brand.id,
-        productType: type,
         onCreated: (product) async {
           await _loadProducts();
-          if (!mounted) return;
-          // Auto-navigate to poster config after creation
-          if (type == 'poster') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PosterConfigScreen(
-                  product: product,
-                  onJobCreated: () => _loadProducts(),
-                ),
-              ),
-            );
-          }
-          // Video config will be added later
         },
       ),
     );
@@ -143,153 +118,13 @@ class _ProductScreenState extends State<ProductScreen> {
   }
 }
 
-// ─── Product Type Sheet ───────────────────────────────────────────
-class _ProductTypeSheet extends StatelessWidget {
-  const _ProductTypeSheet();
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Select Product Type',
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: isDark
-                  ? AppColors.textPrimaryDark
-                  : AppColors.textPrimaryLight,
-            ),
-          ),
-          const SizedBox(height: 14),
-          _TypeTile(
-            icon: Icons.image_rounded,
-            title: 'Create Poster',
-            subtitle: 'Upload product images and generate AI posters',
-            isDark: isDark,
-            onTap: () => Navigator.pop(context, 'poster'),
-          ),
-          const SizedBox(height: 10),
-          _TypeTile(
-            icon: Icons.videocam_rounded,
-            title: 'Create Video',
-            subtitle: 'Upload product images and generate AI videos',
-            isDark: isDark,
-            onTap: () => Navigator.pop(context, 'video'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TypeTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  const _TypeTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkCard : AppColors.lightCard,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: AppColors.divider.withValues(alpha: 0.5),
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.buttonPrimary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, size: 22, color: AppColors.buttonPrimary),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                      color: isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimaryLight,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 16,
-              color: isDark
-                  ? AppColors.textSecondaryDark
-                  : AppColors.textSecondaryLight,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // ─── Create Product Sheet (simplified: name + images) ─────────────
 class _CreateProductSheet extends StatefulWidget {
   final String brandId;
-  final String productType;
   final Future<void> Function(ProductModel product) onCreated;
 
   const _CreateProductSheet({
     required this.brandId,
-    required this.productType,
     required this.onCreated,
   });
 
@@ -360,8 +195,8 @@ class _CreateProductSheetState extends State<_CreateProductSheet> {
       return;
     }
 
-    if (_selectedImagePaths.length < 2) {
-      AppNotification.warning(context, message: 'Upload at least 2 images');
+    if (_selectedImagePaths.isEmpty) {
+      AppNotification.warning(context, message: 'Upload at least 1 image');
       return;
     }
 
@@ -416,7 +251,7 @@ class _CreateProductSheetState extends State<_CreateProductSheet> {
           ),
           const SizedBox(height: 14),
           Text(
-            'Create ${widget.productType == 'poster' ? 'Poster' : 'Video'} Product',
+            'Create Product',
             style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.w700,
