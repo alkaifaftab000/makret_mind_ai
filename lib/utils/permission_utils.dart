@@ -1,17 +1,41 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-/// Utility for handling runtime permissions
+/// Utility for handling runtime permissions across Android versions
 class PermissionUtils {
   /// Request permission to access photos/gallery
+  /// Handles Android 13+ (READ_MEDIA_IMAGES) and older (READ_EXTERNAL_STORAGE)
   static Future<bool> requestPhotosPermission() async {
-    final status = await Permission.photos.request();
-    return status.isGranted;
-  }
+    if (!Platform.isAndroid && !Platform.isIOS) return true;
 
-  /// Request permission to access gallery (legacy)
-  static Future<bool> requestGalleryPermission() async {
-    final status = await Permission.storage.request();
-    return status.isGranted;
+    // On Android 13+ use Permission.photos, on older use Permission.storage
+    if (Platform.isAndroid) {
+      // Try photos first (Android 13+)
+      var status = await Permission.photos.status;
+      if (status.isGranted) return true;
+
+      // Request photos permission
+      status = await Permission.photos.request();
+      if (status.isGranted) return true;
+
+      // Fall back to storage for older Android
+      status = await Permission.storage.status;
+      if (status.isGranted) return true;
+
+      status = await Permission.storage.request();
+      if (status.isGranted) return true;
+
+      // If permanently denied, guide user to settings
+      if (status.isPermanentlyDenied) {
+        debugPrint('Photo permission permanently denied — open settings');
+      }
+      return false;
+    }
+
+    // iOS
+    final status = await Permission.photos.request();
+    return status.isGranted || status.isLimited;
   }
 
   /// Request camera permission
@@ -20,20 +44,25 @@ class PermissionUtils {
     return status.isGranted;
   }
 
+  /// Request gallery/storage permission (alias for requestPhotosPermission)
+  static Future<bool> requestGalleryPermission() async {
+    return requestPhotosPermission();
+  }
+
   /// Check if photos permission is granted
   static Future<bool> isPhotosPermissionGranted() async {
+    if (Platform.isAndroid) {
+      final photos = await Permission.photos.status;
+      if (photos.isGranted) return true;
+      final storage = await Permission.storage.status;
+      return storage.isGranted;
+    }
     final status = await Permission.photos.status;
-    return status.isGranted;
+    return status.isGranted || status.isLimited;
   }
 
-  /// Check if gallery/storage permission is granted
-  static Future<bool> isGalleryPermissionGranted() async {
-    final status = await Permission.storage.status;
-    return status.isGranted;
-  }
-
-  /// Open app settings
-  static Future<bool> openAppSettings() async {
+  /// Open app settings so user can manually grant permissions
+  static Future<bool> openSettings() async {
     return await openAppSettings();
   }
 }

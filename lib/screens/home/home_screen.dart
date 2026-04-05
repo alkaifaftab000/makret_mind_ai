@@ -881,7 +881,7 @@ class _BrandCard extends StatelessWidget {
   }
 }
 
-// ─── Create Brand Bottom Sheet (unchanged) ────────────────────────
+// ─── Create Brand Bottom Sheet ────────────────────────────────────
 class CreateBrandSheet extends StatefulWidget {
   final Function(BrandModel) onBrandCreated;
 
@@ -894,38 +894,50 @@ class CreateBrandSheet extends StatefulWidget {
 class _CreateBrandSheetState extends State<CreateBrandSheet> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _audienceController = TextEditingController();
-  final _categoryController = TextEditingController();
   String? _selectedImagePath;
   bool _isSubmitting = false;
+
+  final Set<String> _selectedAudiences = {};
+  final Set<String> _selectedCategories = {};
 
   @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
-    _audienceController.dispose();
-    _categoryController.dispose();
     super.dispose();
   }
 
   Future<void> _pickImage() async {
     try {
-      final permissionGranted = await PermissionUtils.requestPhotosPermission();
-      if (!permissionGranted) {
-        if (mounted) {
-          AppNotification.warning(context,
-              message: 'Permission required to access photos');
-        }
-        return;
-      }
+      // Try picking directly — image_picker handles permissions internally
       final imagePath = await ImageUtils.pickImage(source: ImageSource.gallery);
       if (imagePath != null) {
         setState(() => _selectedImagePath = imagePath);
+        return;
+      }
+
+      // If null, user cancelled or permission was denied
+      // Try requesting permission explicitly as fallback
+      final granted = await PermissionUtils.requestPhotosPermission();
+      if (!granted && mounted) {
+        AppNotification.warning(context,
+            message: 'Gallery permission required. Tap to open settings.');
+        await PermissionUtils.openSettings();
       }
     } catch (e) {
-      if (mounted) {
-        AppNotification.error(context,
-            message: 'Failed to pick image. Please try again.');
+      debugPrint('Image pick error: $e');
+      // Permission might be denied — try requesting
+      final granted = await PermissionUtils.requestPhotosPermission();
+      if (!granted && mounted) {
+        AppNotification.warning(context,
+            message: 'Please allow photo access in Settings');
+        await PermissionUtils.openSettings();
+      } else if (granted) {
+        // Retry after permission granted
+        final imagePath = await ImageUtils.pickImage(source: ImageSource.gallery);
+        if (imagePath != null && mounted) {
+          setState(() => _selectedImagePath = imagePath);
+        }
       }
     }
   }
@@ -946,12 +958,12 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
       final brand = await brandService.createBrandWithLogo(
         name: _nameController.text.trim(),
         logoFile: File(_selectedImagePath!),
-        targetAudience: _audienceController.text.isEmpty
+        targetAudience: _selectedAudiences.isEmpty
             ? null
-            : _audienceController.text.trim(),
-        category: _categoryController.text.isEmpty
+            : _selectedAudiences.toList(),
+        category: _selectedCategories.isEmpty
             ? null
-            : _categoryController.text.trim(),
+            : _selectedCategories.toList(),
       );
 
       if (mounted) {
@@ -1009,6 +1021,8 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
               ),
             ),
             const SizedBox(height: 16),
+
+            // ─── Image upload ─────────────────────────────────
             GestureDetector(
               onTap: _isSubmitting ? null : _pickImage,
               child: Container(
@@ -1053,6 +1067,8 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
               ),
             ),
             const SizedBox(height: 16),
+
+            // ─── Brand Name ───────────────────────────────────
             _FormField(
               label: 'Brand Name *',
               hint: 'e.g., Tech Innovations',
@@ -1060,6 +1076,8 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
               isDark: isDark,
             ),
             const SizedBox(height: 12),
+
+            // ─── Description ──────────────────────────────────
             _FormField(
               label: 'Description',
               hint: 'Tell us about your brand...',
@@ -1067,21 +1085,47 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
               isDark: isDark,
               maxLines: 3,
             ),
-            const SizedBox(height: 12),
-            _FormField(
+            const SizedBox(height: 16),
+
+            // ─── Target Audience (multi-select chips) ─────────
+            _ChipSelectSection(
               label: 'Target Audience',
-              hint: 'e.g., Tech enthusiasts, 18-35',
-              controller: _audienceController,
+              options: AppStrings.audienceOptions,
+              selectedOptions: _selectedAudiences,
               isDark: isDark,
+              displayLabels: AppStrings.audienceLabels,
+              onChanged: (selected) {
+                setState(() {
+                  if (_selectedAudiences.contains(selected)) {
+                    _selectedAudiences.remove(selected);
+                  } else {
+                    _selectedAudiences.add(selected);
+                  }
+                });
+              },
             ),
-            const SizedBox(height: 12),
-            _FormField(
+            const SizedBox(height: 16),
+
+            // ─── Category (multi-select chips) ────────────────
+            _ChipSelectSection(
               label: 'Category',
-              hint: 'e.g., Technology, Fashion',
-              controller: _categoryController,
+              options: AppStrings.categoryOptions,
+              selectedOptions: _selectedCategories,
               isDark: isDark,
+              displayLabels: AppStrings.categoryLabels,
+              onChanged: (selected) {
+                setState(() {
+                  if (_selectedCategories.contains(selected)) {
+                    _selectedCategories.remove(selected);
+                  } else {
+                    _selectedCategories.add(selected);
+                  }
+                });
+              },
             ),
             const SizedBox(height: 24),
+
+            // ─── Buttons ──────────────────────────────────────
             Row(
               children: [
                 Expanded(
@@ -1146,6 +1190,107 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
     );
   }
 }
+
+// ─── Multi-select chip section ────────────────────────────────────
+class _ChipSelectSection extends StatelessWidget {
+  final String label;
+  final List<String> options;
+  final Set<String> selectedOptions;
+  final bool isDark;
+  final ValueChanged<String> onChanged;
+  final Map<String, String>? displayLabels;
+
+  const _ChipSelectSection({
+    required this.label,
+    required this.options,
+    required this.selectedOptions,
+    required this.isDark,
+    required this.onChanged,
+    this.displayLabels,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
+              ),
+            ),
+            if (selectedOptions.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.buttonPrimary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${selectedOptions.length}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.buttonText,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: options.map((option) {
+            final isSelected = selectedOptions.contains(option);
+            final chipLabel = displayLabels?[option] ?? option;
+            return GestureDetector(
+              onTap: () => onChanged(option),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.buttonPrimary
+                      : (isDark ? AppColors.darkCard : AppColors.lightCard),
+                  borderRadius: BorderRadius.circular(10),
+                  border: isSelected
+                      ? null
+                      : Border.all(
+                          color: AppColors.divider.withValues(alpha: 0.5),
+                        ),
+                ),
+                child: Text(
+                  chipLabel,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected
+                        ? AppColors.buttonText
+                        : (isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}
+
+
 
 class _FormField extends StatelessWidget {
   final String label;

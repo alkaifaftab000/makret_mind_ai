@@ -72,7 +72,106 @@ class AppStrings {
   static const String brandRequiredTitle = 'Brand Required';
   static const String brandRequiredMessage = 'Create at least one brand before generating content';
 
-  static const String createBrand = '✨ Create Brand';
+  // Brand creation multi-select options (exact backend enum values)
+  static const List<String> audienceOptions = [
+    'kids',
+    'teens',
+    'gen_z',
+    'millennials',
+    'gen_x',
+    'boomers',
+    'seniors',
+    'parents',
+    'students',
+    'professionals',
+    'business_owners',
+    'homeowners',
+    'gamers',
+    'fitness_enthusiasts',
+    'tech_enthusiasts',
+    'travelers',
+    'foodies',
+    'pet_owners',
+    'luxury_shoppers',
+    'bargain_hunters',
+    'creatives',
+    'general',
+  ];
+
+  // Human-readable labels for audience chips
+  static const Map<String, String> audienceLabels = {
+    'kids': 'Kids',
+    'teens': 'Teens',
+    'gen_z': 'Gen Z',
+    'millennials': 'Millennials',
+    'gen_x': 'Gen X',
+    'boomers': 'Boomers',
+    'seniors': 'Seniors',
+    'parents': 'Parents',
+    'students': 'Students',
+    'professionals': 'Professionals',
+    'business_owners': 'Business Owners',
+    'homeowners': 'Homeowners',
+    'gamers': 'Gamers',
+    'fitness_enthusiasts': 'Fitness Enthusiasts',
+    'tech_enthusiasts': 'Tech Enthusiasts',
+    'travelers': 'Travelers',
+    'foodies': 'Foodies',
+    'pet_owners': 'Pet Owners',
+    'luxury_shoppers': 'Luxury Shoppers',
+    'bargain_hunters': 'Bargain Hunters',
+    'creatives': 'Creatives',
+    'general': 'General',
+  };
+
+  static const List<String> categoryOptions = [
+    'beauty',
+    'electronics',
+    'fashion',
+    'jewelry_accessories',
+    'home_garden',
+    'pet_supplies',
+    'toys_games',
+    'sports_outdoors',
+    'food_beverage',
+    'health_wellness',
+    'travel_tourism',
+    'automotive',
+    'finance',
+    'education',
+    'entertainment_media',
+    'software_tech',
+    'real_estate',
+    'b2b_services',
+    'art_design',
+    'other',
+  ];
+
+  // Human-readable labels for category chips
+  static const Map<String, String> categoryLabels = {
+    'beauty': 'Beauty',
+    'electronics': 'Electronics',
+    'fashion': 'Fashion',
+    'jewelry_accessories': 'Jewelry & Accessories',
+    'home_garden': 'Home & Garden',
+    'pet_supplies': 'Pet Supplies',
+    'toys_games': 'Toys & Games',
+    'sports_outdoors': 'Sports & Outdoors',
+    'food_beverage': 'Food & Beverage',
+    'health_wellness': 'Health & Wellness',
+    'travel_tourism': 'Travel & Tourism',
+    'automotive': 'Automotive',
+    'finance': 'Finance',
+    'education': 'Education',
+    'entertainment_media': 'Entertainment & Media',
+    'software_tech': 'Software & Tech',
+    'real_estate': 'Real Estate',
+    'b2b_services': 'B2B Services',
+    'art_design': 'Art & Design',
+    'other': 'Other',
+  };
+
+  static const String createBrand = 'Create Brand';
   static const String createProduct = 'Create Product';
   static const String accountDetails = 'Account Details';
   static const String settings = 'Settings';

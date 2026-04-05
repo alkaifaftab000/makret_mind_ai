@@ -88,8 +88,8 @@ class BrandService {
   Future<BrandModel> createBrand({
     required String name,
     String? logo,
-    String? targetAudience,
-    String? category,
+    List<String>? targetAudience,
+    List<String>? category,
   }) async {
     try {
       _logger.i('Creating new brand (No logo file)...');
@@ -103,8 +103,10 @@ class BrandService {
         'name': name,
         'user_id': currentUserId,
         if (logo != null) 'logo': logo,
-        if (targetAudience != null) 'target_audience': targetAudience,
-        if (category != null) 'category': category,
+        if (targetAudience != null && targetAudience.isNotEmpty)
+          'target_audience': targetAudience,
+        if (category != null && category.isNotEmpty)
+          'category': category,
       };
 
       final response = await _dio.post(
@@ -131,8 +133,8 @@ class BrandService {
   Future<BrandModel> createBrandWithLogo({
     required String name,
     required File logoFile,
-    String? targetAudience,
-    String? category,
+    List<String>? targetAudience,
+    List<String>? category,
   }) async {
     try {
       _logger.i('Uploading logo to Cloudinary...');
@@ -160,21 +162,22 @@ class BrandService {
     }
   }
 
-  /// Update an existing brand completely (PUT /api/brands/{brand_id})
   Future<BrandModel> updateBrand({
     required String id,
     required String name,
     required String logo,
-    String? targetAudience,
-    String? category,
+    List<String>? targetAudience,
+    List<String>? category,
   }) async {
     try {
       _logger.i('Updating brand ID: $id');
       final data = {
         'name': name,
         'logo': logo,
-        if (targetAudience != null) 'target_audience': targetAudience,
-        if (category != null) 'category': category,
+        if (targetAudience != null && targetAudience.isNotEmpty)
+          'target_audience': targetAudience,
+        if (category != null && category.isNotEmpty)
+          'category': category,
       };
 
       final response = await _dio.put(
@@ -201,8 +204,8 @@ class BrandService {
     required String id,
     String? name,
     String? logo,
-    String? targetAudience,
-    String? category,
+    List<String>? targetAudience,
+    List<String>? category,
   }) async {
     try {
       _logger.i('Patching brand ID: $id');

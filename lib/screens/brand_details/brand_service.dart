@@ -11,8 +11,8 @@ class BrandDetailsActionService {
     required BrandModel brand,
     String? name,
     String? imagePath, // used as logo
-    String? targetAudience,
-    String? category,
+    List<String>? targetAudience,
+    List<String>? category,
   }) async {
     return brandService.patchBrand(
       id: brand.id,

@@ -52,12 +52,16 @@ class BrandModel extends HiveObject {
       'id': id,
       'name': name,
       'description': description,
-      'targetAudience': targetAudience,
-      'category': category,
-      'imagePath': imagePath,
+      'target_audience': targetAudience != null && targetAudience!.isNotEmpty
+          ? targetAudience!.split(', ')
+          : [],
+      'category': category != null && category!.isNotEmpty
+          ? category!.split(', ')
+          : [],
+      'logo': imagePath,
       'productions': productions,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 
@@ -66,11 +70,11 @@ class BrandModel extends HiveObject {
     return BrandModel(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
-      description: json['description']?.toString(), // Not standard in new API, but keep for local compatibility
-      targetAudience: json['target_audience']?.toString() ?? json['targetAudience']?.toString(),
-      category: json['category']?.toString(),
-      imagePath: json['logo']?.toString() ?? json['imagePath']?.toString() ?? '', // API uses 'logo'
-      productions: json['product_count'] as int? ?? json['productions'] as int? ?? 0, // API uses 'product_count'
+      description: json['description']?.toString(),
+      targetAudience: _parseListField(json['target_audience'] ?? json['targetAudience']),
+      category: _parseListField(json['category']),
+      imagePath: json['logo']?.toString() ?? json['imagePath']?.toString() ?? '',
+      productions: json['product_count'] as int? ?? json['productions'] as int? ?? 0,
       createdAt: json['created_at'] != null 
           ? DateTime.parse(json['created_at'].toString())
           : (json['createdAt'] != null ? DateTime.parse(json['createdAt'].toString()) : null),
@@ -78,6 +82,17 @@ class BrandModel extends HiveObject {
           ? DateTime.parse(json['updated_at'].toString())
           : (json['updatedAt'] != null ? DateTime.parse(json['updatedAt'].toString()) : null),
     );
+  }
+
+  /// Parse a field that could be a List<String> or a String into a comma-separated String
+  static String? _parseListField(dynamic value) {
+    if (value == null) return null;
+    if (value is List) {
+      final items = value.map((e) => e.toString()).where((s) => s.isNotEmpty).toList();
+      return items.isEmpty ? null : items.join(', ');
+    }
+    final str = value.toString();
+    return str.isEmpty ? null : str;
   }
 
   /// Copy with method for immutable updates
