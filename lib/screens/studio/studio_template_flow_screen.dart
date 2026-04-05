@@ -76,7 +76,8 @@ class _StudioTemplateFlowScreenState extends State<StudioTemplateFlowScreen> {
     _product = widget.product;
     _promptController = TextEditingController(text: widget.initialPrompt);
     _loadInitialData();
-    _startPollingIfNeeded();
+    // Note: _startPollingIfNeeded() is called at the end of _loadInitialData
+    // after existing studio jobs have been fetched.
   }
 
   @override
@@ -165,6 +166,10 @@ class _StudioTemplateFlowScreenState extends State<StudioTemplateFlowScreen> {
           _outputFormat = _appOptions.outputFormats.first;
         }
       });
+
+      // Fetch existing studio jobs so the screen shows any previous results
+      // immediately on open, without waiting for a user action.
+      await _refreshProduct(silent: true);
     } catch (_) {
       if (!mounted) return;
       AppNotification.error(
@@ -174,6 +179,8 @@ class _StudioTemplateFlowScreenState extends State<StudioTemplateFlowScreen> {
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
+        // Start polling AFTER data (including existing jobs) has been fetched
+        _startPollingIfNeeded();
       }
     }
   }
@@ -234,18 +241,36 @@ class _StudioTemplateFlowScreenState extends State<StudioTemplateFlowScreen> {
         shots: [shot],
       );
 
-      await studioService.createStudioJob(request);
+      final jobResponse = await studioService.createStudioJob(request);
       if (!mounted) return;
+
+      // Immediately show a 'pending' processing card so the user sees visual
+      // feedback without waiting for the first poll cycle.
+      setState(() {
+        _fetchedStudioJobs = [
+          StudioImageJob(
+            id: jobResponse.jobId,
+            status: 'pending',
+            outputs: const [],
+            createdAt: DateTime.now(),
+          ),
+          ..._fetchedStudioJobs,
+        ];
+      });
 
       AppNotification.success(
         context,
-        message: 'Studio job generation started!',
+        message: 'AI Studio generation started! Images will appear below when ready.',
       );
 
+      // Start polling immediately so the 'pending' card turns into results
+      _startPollingIfNeeded();
+
+      // Also do an immediate refresh to pick up the real job record
       await _refreshProduct();
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
-      AppNotification.error(context, message: 'Failed to create studio job');
+      AppNotification.error(context, message: 'Failed to generate studio images: $e');
     } finally {
       if (mounted) {
         setState(() => _isCreating = false);
@@ -1201,7 +1226,7 @@ class _StudioTemplateFlowScreenState extends State<StudioTemplateFlowScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : Text(
-                              'Create Studio Job',
+                              'Generate AI Studio Images',
                               style: GoogleFonts.poppins(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
@@ -2001,25 +2026,50 @@ class _StudioJobResultScreenState extends State<_StudioJobResultScreen> {
       final originalUrl = widget.job.outputs[_currentIndex];
       String finalUrl = originalUrl;
 
-      // Handle Kie AI transient URL -> Cloudinary permanent URL
-      if (originalUrl.contains('api.kie.ai') || originalUrl.contains('tempfile.')) {
+      // KIE AI generates temporary URLs that expire in ~20 minutes.
+      // We must: 1) get a permanent download URL, 2) download the file,
+      // 3) upload to Cloudinary, 4) use the Cloudinary URL as the permanent link.
+      final isKieAiUrl = originalUrl.contains('api.kie.ai') ||
+          originalUrl.contains('tempfile.') ||
+          originalUrl.contains('kie.ai');
+
+      if (isKieAiUrl) {
+        AppNotification.info(
+          context,
+          message: 'Uploading to cloud storage...',
+        );
+
+        // Step 1: Get a short-lived secure download URL from KIE
         final secureUrl = await kieService.getDownloadUrl(originalUrl);
+
+        // Step 2: Download the image to a local temp file
         final downloadedFile = await kieService.downloadImageToFile(secureUrl);
-        
-        final cloudinaryResponse = await cloudinaryService.uploadImage(downloadedFile);
-        if (cloudinaryResponse != null && cloudinaryResponse.isNotEmpty) {
-          finalUrl = cloudinaryResponse;
-        } else {
-          throw Exception('Cloudinary upload failed.');
+
+        // Step 3: Upload to Cloudinary for a permanent URL
+        final cloudinaryUrl = await cloudinaryService.uploadImage(
+          downloadedFile,
+          folder: 'studio_images',
+        );
+
+        if (cloudinaryUrl == null || cloudinaryUrl.isEmpty) {
+          throw Exception('Cloud upload returned an empty URL.');
         }
+
+        finalUrl = cloudinaryUrl;
+
+        // Clean up temp file
+        try { await downloadedFile.delete(); } catch (_) {}
       }
 
+      // Step 4: POST the permanent URL to the backend to associate it
+      // with the product (saved to DDB via /api/studio/select)
       await studioService.selectStudioImage(
         SelectStudioImageRequest(
           productId: widget.productId,
           imageUrl: finalUrl,
         ),
       );
+
       if (!mounted) return;
       AppNotification.success(
         context,
@@ -2027,11 +2077,11 @@ class _StudioJobResultScreenState extends State<_StudioJobResultScreen> {
       );
       widget.onImageSelected();
       Navigator.pop(context);
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       AppNotification.error(
         context,
-        message: 'Failed to assign image to product.',
+        message: 'Failed to assign image: ${e.toString().replaceAll('Exception: ', '')}',
       );
     } finally {
       if (mounted) {
