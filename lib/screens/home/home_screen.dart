@@ -515,12 +515,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title
-              Text(
-                AppStrings.homeTitle,
-                style: AppTextStyles.pageHeading(context, isDark),
-              ),
-              const SizedBox(height: 12),
+
 
               // Search bar
               TextField(

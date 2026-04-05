@@ -164,17 +164,8 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
       backgroundColor: isDark
           ? AppColors.darkBackground
           : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: isDark
-            ? AppColors.darkBackground
-            : AppColors.lightBackground,
-        elevation: 0,
-        title: Text(
-          AppStrings.templatesTitle,
-          style: AppTextStyles.screenTitle(context, isDark),
-        ),
-      ),
-      body: Column(
+      body: SafeArea(
+        child: Column(
         children: [
           // Search Bar
           Padding(
@@ -266,6 +257,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                   ),
           ),
         ],
+      ),
       ),
     );
   }
