@@ -208,26 +208,31 @@ class ProductService {
     }
   }
 
-  /// Approve a video job's scenes
-  /// POST /api/products/{product_id}/videos/{job_id}/approve
+  /// Approve a video job's scenes and move it to "processing".
+  /// Body is the list of (possibly edited) VideoScene objects.
+  /// This is wired up but must be called explicitly — not triggered automatically.
   Future<ProductModel> approveVideoJob({
     required String productId,
     required String jobId,
-    List<VideoScene>? approvedScenes,
+    required List<VideoScene> approvedScenes,
   }) async {
     try {
-      _logger.i('Approving video job: $jobId');
+      _logger.i('Approving video job $jobId for product $productId');
+      final body = approvedScenes.map((s) => s.toJson()).toList();
       final response = await _dio.post(
         '/api/products/$productId/videos/$jobId/approve',
-        data: approvedScenes?.map((s) => s.toJson()).toList(),
+        data: body,
       );
-
       if (response.statusCode == 200) {
+        _logger.i('Video job $jobId approved successfully');
         return ProductModel.fromJson(response.data);
       }
-      throw Exception('Failed to approve video job');
+      throw Exception('Failed to approve video job: ${response.statusCode}');
     } catch (e) {
       _logger.e('Error approving video job: $e');
+      if (e is DioException) {
+        _logger.e('Response: ${e.response?.data}');
+      }
       rethrow;
     }
   }
