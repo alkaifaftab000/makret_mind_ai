@@ -128,8 +128,8 @@ class AuthService {
 
   /// Developer Login to bypass Google OAuth during development
   Future<UserModel?> devLogin({
-    String email = 'test@example.com',
-    String name = 'Test User',
+    String email = 'avinash@stallar.tech',
+    String name = 'Avinash',
   }) async {
     try {
       _logger.i('Attempting Developer Login for $email');

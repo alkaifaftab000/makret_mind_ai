@@ -3,8 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:market_mind/constants/app_colors.dart';
 import 'package:market_mind/constants/app_strings.dart';
 import 'package:market_mind/constants/app_text_styles.dart';
-import 'package:market_mind/models/product_model.dart';
-import 'package:market_mind/screens/product/product_generation_screen.dart';
 import 'package:market_mind/utils/search_bar.dart';
 
 class TemplatesScreen extends StatefulWidget {
@@ -146,33 +144,14 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
   }
 
   void _viewTemplate(_Template template) {
-    final product = ProductModel(
-      id: 'template_${template.id}',
-      brandId: 'template_brand',
-      name: template.name,
-      type: 'video',
-      imagePaths: List<String>.generate(3, (index) => 'template_$index'),
-      prompt: template.config.prompt,
-      tone: template.config.tone,
-      modelType: template.config.modelType,
-      audioType: template.config.audioType,
-      aspectRatio: template.config.aspectRatio,
-      customAspectRatio: null,
-      videoLength: template.config.videoLength,
-      status: 'final_ready',
-      scenes: [],
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ProductGenerationScreen(
-          product: product,
-          startWithFinal: true,
-          overrideFinalAsset: template.thumbnail,
+    // Templates are demo content — show a preview snackbar for now
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Template preview: ${template.name}',
+          style: GoogleFonts.poppins(),
         ),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

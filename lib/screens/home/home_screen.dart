@@ -7,7 +7,9 @@ import 'package:market_mind/constants/app_strings.dart';
 import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/models/brand_model.dart';
 import 'package:market_mind/screens/brand_details/brand_details_screen.dart';
+import 'package:market_mind/screens/product/poster_config_screen.dart';
 import 'package:market_mind/screens/product/product_screen.dart';
+import 'package:market_mind/screens/product/video_config_screen.dart';
 import 'package:market_mind/services/brand_service.dart';
 import 'package:market_mind/services/product_service.dart';
 import 'package:market_mind/models/product_model.dart';
@@ -76,8 +78,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       setState(() {
         _brands = brands;
         _filteredBrands = brands;
-        _videoProducts = allProducts.where((p) => p.type == 'video').toList();
-        _posterProducts = allProducts.where((p) => p.type == 'poster').toList();
+        _videoProducts = allProducts.where((p) => p.hasVideos).toList();
+        _posterProducts = allProducts.where((p) => p.hasPosters).toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -208,13 +210,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     padding: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
                       onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ProductScreen(brand: brand),
-                          ),
-                        ).then((_) => _loadData());
+                        Navigator.pop(context); // close brand picker
+                        _showProductPickerForBrand(brand, productType);
                       },
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -263,6 +260,193 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       ),
     );
   }
+
+  /// After brand is selected, show its products and route to config screen
+  void _showProductPickerForBrand(BrandModel brand, String productType) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Load products for this brand
+    List<ProductModel> products = [];
+    try {
+      products = await productService.getProductsByBrand(brand.id);
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    if (products.isEmpty) {
+      AppNotification.info(context,
+          message: 'No products yet. Create a product first from Brand tab.');
+      // Navigate to product screen for this brand
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ProductScreen(brand: brand),
+        ),
+      ).then((_) => _loadData());
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (_) => Container(
+        color: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.55,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Select Product',
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                productType == 'video'
+                    ? 'Choose a product to generate a video ad'
+                    : 'Choose a product to generate a poster',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                itemCount: products.length,
+                itemBuilder: (context, index) {
+                  final product = products[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      onTap: () {
+                        Navigator.pop(context); // close product picker
+                        _navigateToConfigScreen(product, productType);
+                      },
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      tileColor: isDark ? AppColors.darkCard : AppColors.lightCard,
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: SizedBox(
+                          width: 44,
+                          height: 44,
+                          child: product.images.isNotEmpty &&
+                                  product.images.first.startsWith('http')
+                              ? Image.network(
+                                  product.images.first,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: isDark
+                                        ? AppColors.darkCardAlt
+                                        : AppColors.lightCardAlt,
+                                    child: const Icon(
+                                      Icons.image_rounded,
+                                      size: 20,
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  color: isDark
+                                      ? AppColors.darkCardAlt
+                                      : AppColors.lightCardAlt,
+                                  child: const Icon(
+                                    Icons.image_rounded,
+                                    size: 20,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      title: Text(
+                        product.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimaryLight,
+                        ),
+                      ),
+                      subtitle: Text(
+                        '${product.images.length} images',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: isDark
+                              ? AppColors.textMutedDark
+                              : AppColors.textMutedLight,
+                        ),
+                      ),
+                      trailing: Icon(
+                        productType == 'video'
+                            ? Icons.videocam_rounded
+                            : Icons.image_rounded,
+                        size: 18,
+                        color: isDark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToConfigScreen(ProductModel product, String productType) {
+    if (productType == 'poster') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PosterConfigScreen(product: product),
+        ),
+      ).then((_) => _loadData());
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VideoConfigScreen(product: product),
+        ),
+      ).then((_) => _loadData());
+    }
+  }
+
 
   Widget _buildBrandThumbnail(BrandModel brand) {
     if (brand.imagePath.startsWith('http')) {
@@ -493,7 +677,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         isDark: isDark,
       );
     }
-    return _buildProductList(_videoProducts, isDark, Icons.play_circle_fill_rounded);
+    return _buildProductList(_videoProducts, isDark, Icons.play_circle_fill_rounded, 'video');
   }
 
   // ─── Poster tab ─────────────────────────────────────────────────
@@ -508,7 +692,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         isDark: isDark,
       );
     }
-    return _buildProductList(_posterProducts, isDark, Icons.image_rounded);
+    return _buildProductList(_posterProducts, isDark, Icons.image_rounded, 'poster');
   }
 
   // ─── AI Studio tab ─────────────────────────────────────────────
@@ -553,7 +737,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   // ─── Shared product list ────────────────────────────────────────
-  Widget _buildProductList(List<ProductModel> products, bool isDark, IconData typeIcon) {
+  Widget _buildProductList(List<ProductModel> products, bool isDark, IconData typeIcon, String productType) {
     return ListView.separated(
       itemCount: products.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
@@ -563,6 +747,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           product: product,
           isDark: isDark,
           typeIcon: typeIcon,
+          productType: productType,
         );
       },
     );
@@ -574,24 +759,25 @@ class _ProductTile extends StatelessWidget {
   final ProductModel product;
   final bool isDark;
   final IconData typeIcon;
+  final String productType;
 
   const _ProductTile({
     required this.product,
     required this.isDark,
     required this.typeIcon,
+    required this.productType,
   });
 
   Color get _statusColor {
-    switch (product.status.toLowerCase()) {
-      case 'completed':
-        return const Color(0xFF00B894);
-      case 'processing':
-        return const Color(0xFFFDAA5E);
-      case 'failed':
-        return Colors.redAccent;
-      default:
-        return Colors.grey;
-    }
+    // Determine overall status based on latest generations
+    final posterStatus = product.latestPoster?.status ?? 'none';
+    final videoStatus = product.latestVideo?.status ?? 'none';
+    
+    if (posterStatus == 'failed' || videoStatus == 'failed') return Colors.redAccent;
+    if (posterStatus == 'processing' || videoStatus == 'processing') return const Color(0xFFFDAA5E);
+    if (posterStatus == 'completed' || videoStatus == 'completed') return const Color(0xFF00B894);
+    
+    return Colors.grey;
   }
 
   @override
@@ -617,11 +803,11 @@ class _ProductTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             color: _statusColor.withValues(alpha: 0.15),
           ),
-          child: product.imagePaths.isNotEmpty && product.imagePaths.first.startsWith('http')
+          child: product.images.isNotEmpty && product.images.first.startsWith('http')
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.network(
-                    product.imagePaths.first,
+                    product.images.first,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Icon(typeIcon, color: _statusColor, size: 24),
                   ),
@@ -650,7 +836,7 @@ class _ProductTile extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             Text(
-              product.status[0].toUpperCase() + product.status.substring(1),
+              '${product.images.length} images',
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
@@ -663,6 +849,23 @@ class _ProductTile extends StatelessWidget {
           size: 16,
           color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
         ),
+        onTap: () {
+          if (productType == 'video') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => VideoConfigScreen(product: product),
+              ),
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PosterConfigScreen(product: product),
+              ),
+            );
+          }
+        },
       ),
     );
   }

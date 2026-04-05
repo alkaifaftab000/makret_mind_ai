@@ -42,7 +42,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     int totalPosters = 0;
     for (final product in allProducts) {
-      if (product.type == 'poster') {
+      if (product.hasPosters) {
         totalPosters++;
       }
     }

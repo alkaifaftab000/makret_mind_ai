@@ -6,6 +6,7 @@ import 'package:market_mind/constants/app_strings.dart';
 import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/models/brand_model.dart';
 import 'package:market_mind/screens/brand_details/brand_service.dart';
+import 'package:market_mind/screens/product/product_screen.dart';
 import 'package:market_mind/utils/app_notification.dart';
 
 class BrandDetailsScreen extends StatefulWidget {
@@ -285,44 +286,44 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
                     value: _formatDate(_brand.updatedAt),
                   ),
                   const SizedBox(height: 12),
+                  // ─── Primary CTA ──────────────────────────
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ProductScreen(brand: _brand),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.buttonPrimary,
+                        foregroundColor: AppColors.buttonText,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'View Products',
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // ─── Secondary Actions ─────────────────────
                   Row(
                     children: [
                       Expanded(
-                        child: ElevatedButton(
-                          onPressed: _isDeleting ? null : _deleteBrand,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red.shade600,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: Text(
-                            AppStrings.delete,
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton(
+                        child: OutlinedButton.icon(
                           onPressed: _editBrand,
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            side: BorderSide(
-                              color: isDark
-                                  ? AppColors.darkCardAlt
-                                  : AppColors.lightCardAlt,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: Text(
+                          icon: const Icon(Icons.edit_rounded, size: 16),
+                          label: Text(
                             AppStrings.edit,
                             style: GoogleFonts.poppins(
                               fontSize: 13,
@@ -332,14 +333,8 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
                                   : AppColors.textPrimaryLight,
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _shareBrand,
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
                             side: BorderSide(
                               color: isDark
                                   ? AppColors.darkCardAlt
@@ -349,7 +344,14 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          child: Text(
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _shareBrand,
+                          icon: const Icon(Icons.share_rounded, size: 16),
+                          label: Text(
                             AppStrings.share,
                             style: GoogleFonts.poppins(
                               fontSize: 13,
@@ -357,6 +359,39 @@ class _BrandDetailsScreenState extends State<BrandDetailsScreen> {
                               color: isDark
                                   ? AppColors.textPrimaryDark
                                   : AppColors.textPrimaryLight,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            side: BorderSide(
+                              color: isDark
+                                  ? AppColors.darkCardAlt
+                                  : AppColors.lightCardAlt,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _isDeleting ? null : _deleteBrand,
+                          icon: Icon(Icons.delete_rounded, size: 16, color: Colors.red.shade400),
+                          label: Text(
+                            AppStrings.delete,
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.red.shade400,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            side: BorderSide(color: Colors.red.shade300),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                         ),

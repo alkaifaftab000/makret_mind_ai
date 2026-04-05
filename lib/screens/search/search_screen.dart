@@ -8,7 +8,7 @@ import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/models/brand_model.dart';
 import 'package:market_mind/models/product_model.dart';
 import 'package:market_mind/screens/brand_details/brand_details_screen.dart';
-import 'package:market_mind/screens/product/product_description_screen.dart';
+import 'package:market_mind/screens/product/poster_config_screen.dart';
 import 'package:market_mind/screens/product/product_screen.dart';
 import 'package:market_mind/services/brand_service.dart';
 import 'package:market_mind/services/product_service.dart';
@@ -49,8 +49,8 @@ class _SearchScreenState extends State<SearchScreen> {
       if (!mounted) return;
       setState(() {
         _brands = brands;
-        _products = products.where((p) => p.type == 'video').toList();
-        _posters = products.where((p) => p.type == 'poster').toList();
+        _products = products.where((p) => p.hasVideos).toList();
+        _posters = products.where((p) => p.hasPosters).toList();
         _isLoading = false;
       });
     } catch (_) {
@@ -83,7 +83,7 @@ class _SearchScreenState extends State<SearchScreen> {
         .where(
           (p) =>
               p.name.toLowerCase().contains(_query) ||
-              p.prompt.toLowerCase().contains(_query),
+              p.description.toLowerCase().contains(_query),
         )
         .toList();
   }
@@ -94,7 +94,7 @@ class _SearchScreenState extends State<SearchScreen> {
         .where(
           (p) =>
               p.name.toLowerCase().contains(_query) ||
-              p.prompt.toLowerCase().contains(_query),
+              p.description.toLowerCase().contains(_query),
         )
         .toList();
   }
@@ -409,7 +409,7 @@ class _ProductCard extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => ProductDescriptionScreen(product: product),
+            builder: (_) => PosterConfigScreen(product: product),
           ),
         );
       },
@@ -429,12 +429,25 @@ class _ProductCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: preview != null
-                  ? Image.file(
-                      File(preview),
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                    )
+                  ? (preview.startsWith('http')
+                      ? Image.network(
+                          preview,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                            child: const Center(
+                              child: Icon(Icons.image_not_supported_rounded),
+                            ),
+                          ),
+                        )
+                      : Image.file(
+                          File(preview),
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                        ))
                   : Container(
                       color: isDark ? AppColors.darkCard : AppColors.lightCard,
                       child: const Center(
@@ -474,7 +487,7 @@ class _ProductCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '${product.type.toUpperCase()} • ${product.videoLength ?? '-'} • ${product.aspectRatio == 'custom' ? product.customAspectRatio ?? 'custom' : product.aspectRatio}',
+                    '${product.images.length} images • ${product.posters.length} posters • ${product.videos.length} videos',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.poppins(

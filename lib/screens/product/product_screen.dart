@@ -8,8 +8,7 @@ import 'package:market_mind/constants/app_strings.dart';
 import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/models/brand_model.dart';
 import 'package:market_mind/models/product_model.dart';
-import 'package:market_mind/screens/product/product_description_screen.dart';
-import 'package:market_mind/screens/product/product_generation_screen.dart';
+import 'package:market_mind/screens/product/poster_config_screen.dart';
 import 'package:market_mind/services/product_service.dart';
 import 'package:market_mind/utils/app_notification.dart';
 import 'package:market_mind/utils/image_utils.dart';
@@ -63,8 +62,22 @@ class _ProductScreenState extends State<ProductScreen> {
       builder: (_) => _CreateProductSheet(
         brandId: widget.brand.id,
         productType: type,
-        onCreated: () async {
+        onCreated: (product) async {
           await _loadProducts();
+          if (!mounted) return;
+          // Auto-navigate to poster config after creation
+          if (type == 'poster') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PosterConfigScreen(
+                  product: product,
+                  onJobCreated: () => _loadProducts(),
+                ),
+              ),
+            );
+          }
+          // Video config will be added later
         },
       ),
     );
@@ -94,48 +107,24 @@ class _ProductScreenState extends State<ProductScreen> {
             ? const Center(child: CircularProgressIndicator())
             : _products.isEmpty
             ? _EmptyProductsState(isDark: isDark)
-            : GridView.builder(
+            : ListView.separated(
                 itemCount: _products.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.85,
-                ),
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (_, index) => _ProductCard(
                   product: _products[index],
                   isDark: isDark,
-                  onTap: () async {
+                  onTap: () {
                     final product = _products[index];
-                    bool? changed;
-
-                    if (product.status == 'ready' ||
-                        product.finalVideoUrl != null) {
-                      // Navigate straight to final video
-                      changed = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ProductGenerationScreen(
-                            product: product,
-                            startWithFinal: true,
-                            overrideFinalAsset: product.finalVideoUrl,
-                          ),
+                    // Navigate to poster config/results
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PosterConfigScreen(
+                          product: product,
+                          onJobCreated: () => _loadProducts(),
                         ),
-                      );
-                    } else {
-                      // Navigate to description/editor
-                      changed = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              ProductDescriptionScreen(product: product),
-                        ),
-                      );
-                    }
-
-                    if (changed == true) {
-                      await _loadProducts();
-                    }
+                      ),
+                    );
                   },
                 ),
               ),
@@ -145,44 +134,63 @@ class _ProductScreenState extends State<ProductScreen> {
         backgroundColor: AppColors.buttonPrimary,
         foregroundColor: AppColors.buttonText,
         label: Text(
-          '✨ ${AppStrings.createProduct}',
+          AppStrings.createProduct,
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
+        icon: const Icon(Icons.add_rounded),
       ),
     );
   }
 }
 
+// ─── Product Type Sheet ───────────────────────────────────────────
 class _ProductTypeSheet extends StatelessWidget {
   const _ProductTypeSheet();
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
           Text(
             'Select Product Type',
             style: GoogleFonts.poppins(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.w700,
+              color: isDark
+                  ? AppColors.textPrimaryDark
+                  : AppColors.textPrimaryLight,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           _TypeTile(
             icon: Icons.image_rounded,
             title: 'Create Poster',
-            subtitle: 'Images + prompt flow',
+            subtitle: 'Upload product images and generate AI posters',
+            isDark: isDark,
             onTap: () => Navigator.pop(context, 'poster'),
           ),
           const SizedBox(height: 10),
           _TypeTile(
             icon: Icons.videocam_rounded,
             title: 'Create Video',
-            subtitle: 'Images + prompt + duration',
+            subtitle: 'Upload product images and generate AI videos',
+            isDark: isDark,
             onTap: () => Navigator.pop(context, 'video'),
           ),
         ],
@@ -195,43 +203,76 @@ class _TypeTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
+  final bool isDark;
   final VoidCallback onTap;
 
   const _TypeTile({
     required this.icon,
     required this.title,
     required this.subtitle,
+    required this.isDark,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkCard : AppColors.lightCard,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: AppColors.divider.withValues(alpha: 0.5),
+          ),
         ),
         child: Row(
           children: [
-            Icon(icon),
-            const SizedBox(width: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.buttonPrimary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 22, color: AppColors.buttonPrimary),
+            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimaryLight,
+                    ),
                   ),
-                  Text(subtitle, style: GoogleFonts.poppins(fontSize: 12)),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
+                    ),
+                  ),
                 ],
               ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondaryLight,
             ),
           ],
         ),
@@ -240,10 +281,11 @@ class _TypeTile extends StatelessWidget {
   }
 }
 
+// ─── Create Product Sheet (simplified: name + images) ─────────────
 class _CreateProductSheet extends StatefulWidget {
   final String brandId;
   final String productType;
-  final Future<void> Function() onCreated;
+  final Future<void> Function(ProductModel product) onCreated;
 
   const _CreateProductSheet({
     required this.brandId,
@@ -257,31 +299,21 @@ class _CreateProductSheet extends StatefulWidget {
 
 class _CreateProductSheetState extends State<_CreateProductSheet> {
   final _nameController = TextEditingController();
-  final _promptController = TextEditingController();
-  final _toneController = TextEditingController();
-  final _customRatioController = TextEditingController();
-
-  String _modelType = 'no';
-  String _audioType = 'no audio';
-  String _aspectRatio = 'mobile 16:9';
-  String _videoLength = '30 sec';
+  final _descriptionController = TextEditingController();
   bool _isSubmitting = false;
   final List<String> _selectedImagePaths = [];
 
   @override
   void dispose() {
     _nameController.dispose();
-    _promptController.dispose();
-    _toneController.dispose();
-    _customRatioController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
   Future<void> _pickImages() async {
     try {
       final photoPermission = await PermissionUtils.requestPhotosPermission();
-      final storagePermission =
-          await PermissionUtils.requestGalleryPermission();
+      final storagePermission = await PermissionUtils.requestGalleryPermission();
       if (!photoPermission && !storagePermission) {
         if (!mounted) return;
         AppNotification.warning(
@@ -333,49 +365,21 @@ class _CreateProductSheetState extends State<_CreateProductSheet> {
       return;
     }
 
-    if (_selectedImagePaths.length > 5) {
-      AppNotification.warning(context, message: 'Maximum 5 images allowed');
-      return;
-    }
-
-    if (_promptController.text.trim().isEmpty) {
-      AppNotification.warning(context, message: 'Prompt is required');
-      return;
-    }
-
-    if (_aspectRatio == 'custom' &&
-        _customRatioController.text.trim().isEmpty) {
-      AppNotification.warning(context, message: 'Custom ratio is required');
-      return;
-    }
-
     setState(() => _isSubmitting = true);
 
     try {
-      await productService.createProduct(
+      final product = await productService.createProduct(
         brandId: widget.brandId,
         name: _nameController.text.trim(),
-        type: widget.productType,
+        description: _descriptionController.text.trim(),
         imagePaths: _selectedImagePaths,
-        prompt: _promptController.text.trim(),
-        tone: _toneController.text.trim().isEmpty
-            ? 'neutral'
-            : _toneController.text.trim(),
-        modelType: _modelType,
-        audioType: widget.productType == 'poster' ? 'no audio' : _audioType,
-        aspectRatio: _aspectRatio,
-        customAspectRatio: _aspectRatio == 'custom'
-            ? _customRatioController.text.trim()
-            : null,
-        videoLength: widget.productType == 'video' ? _videoLength : null,
       );
 
       if (!mounted) return;
-      await widget.onCreated();
-      if (!mounted) return;
       AppNotification.success(context, message: 'Product created successfully');
       Navigator.pop(context);
-    } catch (_) {
+      await widget.onCreated(product);
+    } catch (e) {
       if (!mounted) return;
       AppNotification.error(context, message: 'Failed to create product');
     } finally {
@@ -410,7 +414,7 @@ class _CreateProductSheetState extends State<_CreateProductSheet> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Text(
             'Create ${widget.productType == 'poster' ? 'Poster' : 'Video'} Product',
             style: GoogleFonts.poppins(
@@ -421,88 +425,53 @@ class _CreateProductSheetState extends State<_CreateProductSheet> {
                   : AppColors.textPrimaryLight,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 4),
+          Text(
+            'Add your product details and images',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondaryLight,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // ─── Upload Images ─────────────────────────────
           _UploadImagesField(
             imagePaths: _selectedImagePaths,
             onPick: _isSubmitting ? null : _pickImages,
             isDark: isDark,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
+          // ─── Product Name ──────────────────────────────
           _TextFieldBlock(
             label: 'Product Name *',
             controller: _nameController,
-            hint: 'e.g. New Launch Reel',
+            hint: 'e.g., Summer Collection Sneakers',
             isDark: isDark,
           ),
           const SizedBox(height: 10),
+          // ─── Description (optional) ────────────────────
           _TextFieldBlock(
-            label: 'Prompt *',
-            controller: _promptController,
-            hint: 'Describe what to generate',
+            label: 'Description',
+            controller: _descriptionController,
+            hint: 'Brief description of your product...',
             isDark: isDark,
             maxLines: 3,
           ),
-          const SizedBox(height: 10),
-          _TextFieldBlock(
-            label: 'Tone',
-            controller: _toneController,
-            hint: 'e.g. premium, modern, cinematic',
-            isDark: isDark,
-          ),
-          const SizedBox(height: 10),
-          _DropdownBlock(
-            label: 'Model Type',
-            value: _modelType,
-            items: const ['male', 'female', 'no'],
-            isDark: isDark,
-            onChanged: (value) => setState(() => _modelType = value ?? 'no'),
-          ),
-          if (widget.productType == 'video') ...[
-            const SizedBox(height: 10),
-            _DropdownBlock(
-              label: 'Audio',
-              value: _audioType,
-              items: const ['male', 'female', 'no audio'],
-              isDark: isDark,
-              onChanged: (value) =>
-                  setState(() => _audioType = value ?? 'no audio'),
-            ),
-          ],
-          const SizedBox(height: 10),
-          _DropdownBlock(
-            label: 'Aspect Ratio',
-            value: _aspectRatio,
-            items: const ['mobile 16:9', 'web', 'tab', 'custom'],
-            isDark: isDark,
-            onChanged: (value) =>
-                setState(() => _aspectRatio = value ?? 'mobile 16:9'),
-          ),
-          if (_aspectRatio == 'custom') ...[
-            const SizedBox(height: 10),
-            _TextFieldBlock(
-              label: 'Custom Ratio *',
-              controller: _customRatioController,
-              hint: 'e.g. 1:1, 9:16',
-              isDark: isDark,
-            ),
-          ],
-          if (widget.productType == 'video') ...[
-            const SizedBox(height: 10),
-            _DropdownBlock(
-              label: 'Length',
-              value: _videoLength,
-              items: const ['15 sec', '30 sec', '45 sec', '60 sec'],
-              isDark: isDark,
-              onChanged: (value) =>
-                  setState(() => _videoLength = value ?? '30 sec'),
-            ),
-          ],
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
+          // ─── Buttons ───────────────────────────────────
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                   child: Text(
                     'Cancel',
                     style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
@@ -516,12 +485,21 @@ class _CreateProductSheetState extends State<_CreateProductSheet> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.buttonPrimary,
                     foregroundColor: AppColors.buttonText,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: _isSubmitting
                       ? const SizedBox(
                           height: 18,
                           width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(
+                              AppColors.buttonText,
+                            ),
+                          ),
                         )
                       : Text(
                           'Create',
@@ -539,6 +517,7 @@ class _CreateProductSheetState extends State<_CreateProductSheet> {
   }
 }
 
+// ─── Upload images component ──────────────────────────────────────
 class _UploadImagesField extends StatelessWidget {
   final List<String> imagePaths;
   final VoidCallback? onPick;
@@ -559,14 +538,34 @@ class _UploadImagesField extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkCard : AppColors.lightCard,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.divider),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: AppColors.divider.withValues(alpha: 0.5),
+            style: imagePaths.isEmpty ? BorderStyle.solid : BorderStyle.solid,
+          ),
         ),
         child: imagePaths.isEmpty
             ? Center(
-                child: Text(
-                  'Upload 2 to 5 images *',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.cloud_upload_rounded,
+                      size: 32,
+                      color: AppColors.buttonPrimary.withValues(alpha: 0.6),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Upload 2-5 product images',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                      ),
+                    ),
+                  ],
                 ),
               )
             : ListView.separated(
@@ -575,8 +574,8 @@ class _UploadImagesField extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   child: Image.file(
                     File(imagePaths[index]),
-                    width: 90,
-                    height: 90,
+                    width: 96,
+                    height: 96,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -588,6 +587,7 @@ class _UploadImagesField extends StatelessWidget {
   }
 }
 
+// ─── Text field component ─────────────────────────────────────────
 class _TextFieldBlock extends StatelessWidget {
   final String label;
   final TextEditingController controller;
@@ -610,18 +610,30 @@ class _TextFieldBlock extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
+          ),
         ),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
           maxLines: maxLines,
+          style: GoogleFonts.poppins(fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,
+            hintStyle: GoogleFonts.poppins(fontSize: 13),
             filled: true,
             fillColor: isDark ? AppColors.darkCard : AppColors.lightCard,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
             ),
           ),
@@ -631,91 +643,7 @@ class _TextFieldBlock extends StatelessWidget {
   }
 }
 
-class _DropdownBlock extends StatelessWidget {
-  final String label;
-  final String value;
-  final List<String> items;
-  final bool isDark;
-  final ValueChanged<String?> onChanged;
-
-  const _DropdownBlock({
-    required this.label,
-    required this.value,
-    required this.items,
-    required this.isDark,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 6),
-        Column(
-          children: items.map((item) {
-            final isSelected = item == value;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () => onChanged(item),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 11,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.buttonPrimary.withValues(alpha: 0.14)
-                        : (isDark ? AppColors.darkCard : AppColors.lightCard),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.buttonPrimary
-                          : AppColors.divider,
-                      width: isSelected ? 1.2 : 0.7,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          item,
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w500,
-                            color: isDark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.textPrimaryLight,
-                          ),
-                        ),
-                      ),
-                      if (isSelected)
-                        Icon(
-                          Icons.check_circle_rounded,
-                          size: 18,
-                          color: AppColors.buttonPrimary,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-}
-
+// ─── Product Card ─────────────────────────────────────────────────
 class _ProductCard extends StatelessWidget {
   final ProductModel product;
   final bool isDark;
@@ -729,97 +657,117 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final preview = product.imagePaths.isNotEmpty
-        ? product.imagePaths.first
-        : null;
+    final preview = product.images.isNotEmpty ? product.images.first : null;
+    final posterCount = product.posters.length;
+    final videoCount = product.videos.length;
+
+    // Find latest poster result
+    final latestPoster = product.latestPoster;
+    final posterStatus = latestPoster?.status ?? 'none';
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : AppColors.lightCard,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: Border.all(
+            color: AppColors.divider.withValues(alpha: 0.3),
+          ),
         ),
-        child: Stack(
+        child: Row(
           children: [
+            // ─── Image preview ──────────────
             ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: preview != null
-                  ? (preview.startsWith('http')
+              borderRadius: const BorderRadius.horizontal(
+                left: Radius.circular(16),
+              ),
+              child: SizedBox(
+                width: 100,
+                height: 100,
+                child: preview != null
+                    ? (preview.startsWith('http')
                         ? Image.network(
                             preview,
                             fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: isDark
-                                  ? AppColors.darkCard
-                                  : AppColors.lightCard,
-                              child: const Center(
-                                child: Icon(Icons.image_not_supported_rounded),
-                              ),
-                            ),
+                            errorBuilder: (_, __, ___) => _imagePlaceholder(),
                           )
                         : Image.file(
                             File(preview),
                             fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
+                            errorBuilder: (_, __, ___) => _imagePlaceholder(),
                           ))
-                  : Container(
-                      color: isDark ? AppColors.darkCard : AppColors.lightCard,
-                      child: const Center(
-                        child: Icon(Icons.image_not_supported_rounded),
+                    : _imagePlaceholder(),
+              ),
+            ),
+            // ─── Info ───────────────────────
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? AppColors.textPrimaryDark
+                            : AppColors.textPrimaryLight,
                       ),
                     ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.1),
-                    Colors.black.withValues(alpha: 0.5),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${product.images.length} images',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        if (posterCount > 0)
+                          _StatusBadge(
+                            label: '$posterCount poster${posterCount > 1 ? 's' : ''}',
+                            status: posterStatus,
+                          ),
+                        if (posterCount > 0 && videoCount > 0)
+                          const SizedBox(width: 6),
+                        if (videoCount > 0)
+                          _StatusBadge(
+                            label: '$videoCount video${videoCount > 1 ? 's' : ''}',
+                            status: product.latestVideo?.status ?? 'none',
+                          ),
+                        if (posterCount == 0 && videoCount == 0)
+                          Text(
+                            'No generations yet',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
+                            ),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),
             ),
-            Positioned(
-              left: 10,
-              right: 10,
-              bottom: 10,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    '${product.type.toUpperCase()} • ${product.videoLength ?? '-'} • ${product.aspectRatio == 'custom' ? product.customAspectRatio : product.aspectRatio}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
               ),
             ),
           ],
@@ -827,8 +775,69 @@ class _ProductCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _imagePlaceholder() {
+    return Container(
+      color: isDark ? AppColors.darkCardAlt : AppColors.lightCardAlt,
+      child: const Center(
+        child: Icon(Icons.image_rounded, size: 28),
+      ),
+    );
+  }
 }
 
+// ─── Status badge ─────────────────────────────────────────────────
+class _StatusBadge extends StatelessWidget {
+  final String label;
+  final String status;
+
+  const _StatusBadge({
+    required this.label,
+    required this.status,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Color bgColor;
+    Color textColor;
+
+    switch (status) {
+      case 'completed':
+        bgColor = Colors.green.withValues(alpha: 0.15);
+        textColor = Colors.green.shade700;
+        break;
+      case 'processing':
+        bgColor = Colors.orange.withValues(alpha: 0.15);
+        textColor = Colors.orange.shade700;
+        break;
+      case 'failed':
+        bgColor = Colors.red.withValues(alpha: 0.15);
+        textColor = Colors.red.shade700;
+        break;
+      default:
+        bgColor = AppColors.buttonPrimary.withValues(alpha: 0.1);
+        textColor = AppColors.buttonPrimary;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.poppins(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: textColor,
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Empty state ──────────────────────────────────────────────────
 class _EmptyProductsState extends StatelessWidget {
   final bool isDark;
 
@@ -838,30 +847,36 @@ class _EmptyProductsState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkCard : AppColors.lightCard,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(
-              Icons.video_collection_rounded,
-              size: 64,
-              color: AppColors.buttonPrimary,
+          Icon(
+            Icons.inventory_2_rounded,
+            size: 64,
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textMutedLight,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'No products yet',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: isDark
+                  ? AppColors.textPrimaryDark
+                  : AppColors.textPrimaryLight,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 4),
           Text(
-            AppStrings.noProductsYet,
-            style: AppTextStyles.titleMedium(context, isDark),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            AppStrings.noProductsSubtitle,
-            style: AppTextStyles.bodySmall(context, isDark),
+            'Tap the button below to create your first product',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondaryLight,
+            ),
           ),
         ],
       ),
