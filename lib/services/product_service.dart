@@ -231,6 +231,76 @@ class ProductService {
       rethrow;
     }
   }
+
+  // ─── Product Update / Patch ──────────────────────────────────────
+
+  /// PATCH a product (partial update)
+  /// PATCH /api/products/{product_id}
+  Future<ProductModel> patchProduct({
+    required String productId,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      _logger.i('Patching product: $productId with data: ${data.keys}');
+      final response = await _dio.patch(
+        '/api/products/$productId',
+        data: data,
+      );
+
+      if (response.statusCode == 200) {
+        _logger.i('Product patched successfully');
+        return ProductModel.fromJson(response.data);
+      }
+      throw Exception('Failed to patch product: ${response.statusCode}');
+    } catch (e) {
+      _logger.e('Error patching product: $e');
+      if (e is DioException) {
+        _logger.e('Response: ${e.response?.data}');
+      }
+      rethrow;
+    }
+  }
+
+  /// Update a specific poster's result in the backend DB.
+  /// Sends the updated poster array via PATCH.
+  Future<ProductModel> updatePosterResult({
+    required String productId,
+    required String posterId,
+    required String status,
+    required String resultUrl,
+  }) async {
+    try {
+      // Fetch current product to get the full posters array
+      final product = await getProductById(productId);
+      if (product == null) throw Exception('Product not found');
+
+      // Update the specific poster in the array
+      final updatedPosters = product.posters.map((p) {
+        if (p.id == posterId) {
+          return PosterJob(
+            id: p.id,
+            status: status,
+            config: p.config,
+            taskId: p.taskId,
+            resultUrl: resultUrl,
+            createdAt: p.createdAt,
+          );
+        }
+        return p;
+      }).toList();
+
+      // PATCH the product with the updated posters array
+      return await patchProduct(
+        productId: productId,
+        data: {
+          'posters': updatedPosters.map((p) => p.toJson()).toList(),
+        },
+      );
+    } catch (e) {
+      _logger.e('Error updating poster result: $e');
+      rethrow;
+    }
+  }
 }
 
 final productService = ProductService();

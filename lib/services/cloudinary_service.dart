@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cloudinary_public/cloudinary_public.dart';
+import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 
 class CloudinaryService {
@@ -52,6 +53,38 @@ class CloudinaryService {
     }
     
     return urls;
+  }
+
+  /// Downloads an image from a temporary URL and uploads it to Cloudinary.
+  /// Used for Kie AI generated images that have expiring URLs (20 min).
+  /// Returns the permanent Cloudinary secure URL.
+  Future<String?> uploadImageFromUrl(String tempUrl, {String folder = 'posters'}) async {
+    try {
+      _logger.i('Downloading image from temp URL to re-upload to Cloudinary...');
+      
+      // 1. Download the image to a temp file
+      final dio = Dio();
+      final tempDir = await Directory.systemTemp.createTemp('kie_ai_');
+      final tempFile = File('${tempDir.path}/poster_${DateTime.now().millisecondsSinceEpoch}.png');
+      
+      await dio.download(tempUrl, tempFile.path);
+      _logger.i('Downloaded image to ${tempFile.path} (${await tempFile.length()} bytes)');
+      
+      // 2. Upload to Cloudinary
+      final cloudinaryUrl = await uploadImage(tempFile, folder: folder);
+      
+      // 3. Clean up temp file
+      try {
+        await tempFile.delete();
+        await tempDir.delete();
+      } catch (_) {}
+      
+      _logger.i('Image re-uploaded to Cloudinary: $cloudinaryUrl');
+      return cloudinaryUrl;
+    } catch (e) {
+      _logger.e('Failed to upload image from URL to Cloudinary: $e');
+      return null;
+    }
   }
 }
 

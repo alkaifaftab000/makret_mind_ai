@@ -18,6 +18,7 @@ import 'package:market_mind/models/product_model.dart';
 import 'package:market_mind/utils/app_notification.dart';
 import 'package:market_mind/utils/image_utils.dart';
 import 'package:market_mind/utils/permission_utils.dart';
+import 'package:market_mind/services/app_options_service.dart';
 
 // ─── Tab definition ───────────────────────────────────────────────
 enum HomeTab { video, poster, aiStudio, brand }
@@ -76,8 +77,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final brands = await brandService.getAllBrands();
-      final allProducts = await productService.getAllProducts();
+      // Fetch options + data in parallel
+      final results = await Future.wait([
+        brandService.getAllBrands(),
+        productService.getAllProducts(),
+        appOptionsService.fetchOptions(),
+      ]);
+      final brands = results[0] as List<BrandModel>;
+      final allProducts = results[1] as List<ProductModel>;
 
       setState(() {
         _brands = brands;
@@ -769,9 +776,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   // ─── Shared product list ────────────────────────────────────────
   Widget _buildProductList(List<ProductModel> products, bool isDark, IconData typeIcon, String productType) {
-    return ListView.separated(
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.85,
+      ),
       itemCount: products.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final product = products[index];
         return _ProductTile(
@@ -823,99 +835,163 @@ class _ProductTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : AppColors.lightCard,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: _statusColor.withValues(alpha: 0.15),
-          ),
-          child: product.images.isNotEmpty && product.images.first.startsWith('http')
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    product.images.first,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Icon(typeIcon, color: _statusColor, size: 24),
-                  ),
-                )
-              : Icon(typeIcon, color: _statusColor, size: 24),
+    String? displayImageUrl;
+    bool isResultImage = false;
+
+    // Prioritize showing the actual generated result if available
+    if (productType == 'poster' &&
+        product.latestPoster?.resultUrl != null &&
+        product.latestPoster!.resultUrl!.isNotEmpty) {
+      displayImageUrl = product.latestPoster!.resultUrl;
+      isResultImage = true;
+    } else if (product.images.isNotEmpty && product.images.first.startsWith('http')) {
+      displayImageUrl = product.images.first;
+    }
+
+    return GestureDetector(
+      onTap: () {
+        if (productType == 'video') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => VideoConfigScreen(product: product),
+            ),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PosterConfigScreen(product: product),
+            ),
+          );
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        title: Text(
-          product.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-          ),
-        ),
-        subtitle: Row(
+        child: Stack(
           children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: _statusColor,
-                shape: BoxShape.circle,
+            // ─── Background Image ─────────────────────────
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                child: displayImageUrl != null
+                    ? Image.network(
+                        displayImageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Center(
+                          child: Icon(typeIcon, color: _statusColor, size: 40),
+                        ),
+                      )
+                    : Center(
+                        child: Icon(typeIcon, color: _statusColor, size: 40),
+                      ),
               ),
             ),
-            const SizedBox(width: 6),
-            Text(
-              productType == 'studio'
-                  ? '${product.studioImages.length} studio jobs'
-                  : '${product.images.length} images',
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+            // ─── Gradient Overlay ─────────────────────────
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.7),
+                  ],
+                ),
+              ),
+            ),
+            // ─── Content ──────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Top Row: Status badge
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: _statusColor.withValues(alpha: 0.5)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: _statusColor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isResultImage ? 'Generated' : 'Source',
+                              style: GoogleFonts.poppins(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Bottom Row: Title & Info
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(typeIcon, size: 12, color: Colors.white70),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${product.images.length} Inputs',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              color: Colors.white70,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
         ),
-        trailing: Icon(
-          Icons.arrow_forward_ios_rounded,
-          size: 16,
-          color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
-        ),
-        onTap: () {
-          if (productType == 'video') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => VideoConfigScreen(product: product),
-              ),
-            );
-          } else if (productType == 'poster') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PosterConfigScreen(product: product),
-              ),
-            );
-          } else {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => StudioProductJobsScreen(product: product),
-              ),
-            );
-          }
-        },
       ),
     );
   }
@@ -990,13 +1066,12 @@ class _BrandCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () async {
-        final shouldRefresh = await Navigator.push<bool>(
+        // Tapping the card opens the Products screen
+        await Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => BrandDetailsScreen(brand: brand)),
+          MaterialPageRoute(builder: (_) => ProductScreen(brand: brand)),
         );
-        if (shouldRefresh == true) {
-          onRefresh();
-        }
+        onRefresh();
       },
       child: Container(
         decoration: BoxDecoration(
@@ -1063,13 +1138,14 @@ class _BrandCard extends StatelessWidget {
                     height: 32,
                     child: ElevatedButton(
                       onPressed: () async {
-                        await Navigator.push(
+                        // Tapping Info opens Brand details
+                        final shouldRefresh = await Navigator.push<bool>(
                           context,
-                          MaterialPageRoute(
-                            builder: (_) => ProductScreen(brand: brand),
-                          ),
+                          MaterialPageRoute(builder: (_) => BrandDetailsScreen(brand: brand)),
                         );
-                        onRefresh();
+                        if (shouldRefresh == true) {
+                          onRefresh();
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.buttonText,
@@ -1080,7 +1156,7 @@ class _BrandCard extends StatelessWidget {
                         padding: EdgeInsets.zero,
                       ),
                       child: Text(
-                        AppStrings.createProduct,
+                        'Info',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -1421,10 +1497,10 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
             // ─── Target Audience (multi-select chips) ─────────
             _ChipSelectSection(
               label: 'Target Audience',
-              options: AppStrings.audienceOptions,
+              options: appOptionsService.audienceOptions,
               selectedOptions: _selectedAudiences,
               isDark: isDark,
-              displayLabels: AppStrings.audienceLabels,
+              displayLabels: appOptionsService.audienceLabels,
               onChanged: (selected) {
                 setState(() {
                   if (_selectedAudiences.contains(selected)) {
@@ -1440,10 +1516,10 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
             // ─── Category (multi-select chips) ────────────────
             _ChipSelectSection(
               label: 'Category',
-              options: AppStrings.categoryOptions,
+              options: appOptionsService.categoryOptions,
               selectedOptions: _selectedCategories,
               isDark: isDark,
-              displayLabels: AppStrings.categoryLabels,
+              displayLabels: appOptionsService.categoryLabels,
               onChanged: (selected) {
                 setState(() {
                   if (_selectedCategories.contains(selected)) {

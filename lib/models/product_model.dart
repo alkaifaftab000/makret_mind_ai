@@ -87,6 +87,18 @@ class PosterJob {
   bool get isPending => status == 'pending';
   bool get isProcessing => status == 'processing';
   bool get isFailed => status == 'failed';
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'status': status,
+      if (config != null) 'config': config!.toJson(),
+      if (taskId != null) 'taskId': taskId,
+      if (resultUrl != null) 'resultUrl': resultUrl,
+      'createdAt': createdAt.toIso8601String(),
+      if (error != null) 'error': error,
+    };
+  }
 }
 
 // ─── Video Config ─────────────────────────────────────────────────
