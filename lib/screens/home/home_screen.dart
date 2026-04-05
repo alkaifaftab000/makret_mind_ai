@@ -947,13 +947,12 @@ class _BrandCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () async {
-        final shouldRefresh = await Navigator.push<bool>(
+        // Tapping the card opens the Products screen
+        await Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => BrandDetailsScreen(brand: brand)),
+          MaterialPageRoute(builder: (_) => ProductScreen(brand: brand)),
         );
-        if (shouldRefresh == true) {
-          onRefresh();
-        }
+        onRefresh();
       },
       child: Container(
         decoration: BoxDecoration(
@@ -1020,13 +1019,14 @@ class _BrandCard extends StatelessWidget {
                     height: 32,
                     child: ElevatedButton(
                       onPressed: () async {
-                        await Navigator.push(
+                        // Tapping Info opens Brand details
+                        final shouldRefresh = await Navigator.push<bool>(
                           context,
-                          MaterialPageRoute(
-                            builder: (_) => ProductScreen(brand: brand),
-                          ),
+                          MaterialPageRoute(builder: (_) => BrandDetailsScreen(brand: brand)),
                         );
-                        onRefresh();
+                        if (shouldRefresh == true) {
+                          onRefresh();
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.buttonText,
@@ -1037,7 +1037,7 @@ class _BrandCard extends StatelessWidget {
                         padding: EdgeInsets.zero,
                       ),
                       child: Text(
-                        AppStrings.createProduct,
+                        'Info',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
