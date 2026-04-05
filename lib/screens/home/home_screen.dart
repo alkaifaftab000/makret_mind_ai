@@ -808,6 +808,8 @@ class _ProductTile extends StatelessWidget {
 
   Color get _statusColor {
     if (productType == 'studio') {
+      // Raw URL strings in studioImageUrls = completed images
+      if (product.studioImageUrls.isNotEmpty) return const Color(0xFF00B894);
       final studioStatus = product.latestStudioImage?.status ?? 'none';
       if (studioStatus == 'failed') return Colors.redAccent;
       if (studioStatus == 'processing' || studioStatus == 'pending') {
@@ -834,7 +836,10 @@ class _ProductTile extends StatelessWidget {
     bool isResultImage = false;
 
     // Prioritize showing the actual generated result if available
-    if (productType == 'poster' &&
+    if (productType == 'studio' && product.allStudioImageUrls.isNotEmpty) {
+      displayImageUrl = product.allStudioImageUrls.first;
+      isResultImage = true;
+    } else if (productType == 'poster' &&
         product.latestPoster?.resultUrl != null &&
         product.latestPoster!.resultUrl!.isNotEmpty) {
       displayImageUrl = product.latestPoster!.resultUrl;
@@ -850,6 +855,13 @@ class _ProductTile extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (_) => VideoConfigScreen(product: product),
+            ),
+          );
+        } else if (productType == 'studio') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => StudioProductJobsScreen(product: product),
             ),
           );
         } else {

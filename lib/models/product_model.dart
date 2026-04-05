@@ -303,6 +303,9 @@ class ProductModel {
   final List<PosterJob> posters;
   final List<VideoJob> videos;
   final List<StudioImageJob> studioImages;
+  /// Raw studio image URLs stored directly on the product document
+  /// (pushed via /studio/select endpoint as plain strings).
+  final List<String> studioImageUrls;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -315,11 +318,31 @@ class ProductModel {
     this.posters = const [],
     this.videos = const [],
     this.studioImages = const [],
+    this.studioImageUrls = const [],
     required this.createdAt,
     required this.updatedAt,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    // The backend stores studio images as a flat list of URL strings
+    // (pushed via `$push: {studioImages: url}`). Parse accordingly —
+    // if elements are Strings treat as URL list, if Maps try StudioImageJob.
+    final rawStudio = (json['studioImages'] ??
+            json['studio_images'] ??
+            json['studioJobs'] ??
+            json['studio_jobs']) as List<dynamic>?;
+
+    final List<String> studioUrls = [];
+    final List<StudioImageJob> studioJobs = [];
+
+    for (final e in rawStudio ?? []) {
+      if (e is String) {
+        studioUrls.add(e);
+      } else if (e is Map<String, dynamic>) {
+        try { studioJobs.add(StudioImageJob.fromJson(e)); } catch (_) {}
+      }
+    }
+
     return ProductModel(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       brandId: json['brandId']?.toString() ?? json['brand_id']?.toString() ?? '',
@@ -337,10 +360,8 @@ class ProductModel {
               ?.map((e) => VideoJob.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-        studioImages: ((json['studioImages'] ?? json['studio_images'] ?? json['studioJobs'] ?? json['studio_jobs']) as List<dynamic>?)
-            ?.map((e) => StudioImageJob.fromJson(e as Map<String, dynamic>))
-            .toList() ??
-          [],
+      studioImages: studioJobs,
+      studioImageUrls: studioUrls,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'].toString())
           : (json['created_at'] != null
@@ -366,11 +387,21 @@ class ProductModel {
   /// Quick helpers
   bool get hasPosters => posters.isNotEmpty;
   bool get hasVideos => videos.isNotEmpty;
-  bool get hasStudioImages => studioImages.isNotEmpty;
+  /// True if there are AI Studio images — either raw URLs or full job objects.
+  bool get hasStudioImages => studioImageUrls.isNotEmpty || studioImages.isNotEmpty;
   PosterJob? get latestPoster => posters.isNotEmpty ? posters.last : null;
   VideoJob? get latestVideo => videos.isNotEmpty ? videos.last : null;
   StudioImageJob? get latestStudioImage =>
       studioImages.isNotEmpty ? studioImages.last : null;
+
+  /// All studio output URLs: raw URL list + any URLs from StudioImageJob outputs.
+  List<String> get allStudioImageUrls {
+    final urls = List<String>.from(studioImageUrls);
+    for (final job in studioImages) {
+      urls.addAll(job.outputs);
+    }
+    return urls;
+  }
 
   /// For backward compat with existing UI that reads imagePaths
   List<String> get imagePaths => images;
@@ -382,6 +413,7 @@ class ProductModel {
     List<PosterJob>? posters,
     List<VideoJob>? videos,
     List<StudioImageJob>? studioImages,
+    List<String>? studioImageUrls,
     DateTime? updatedAt,
   }) {
     return ProductModel(
@@ -393,6 +425,7 @@ class ProductModel {
       posters: posters ?? this.posters,
       videos: videos ?? this.videos,
       studioImages: studioImages ?? this.studioImages,
+      studioImageUrls: studioImageUrls ?? this.studioImageUrls,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
