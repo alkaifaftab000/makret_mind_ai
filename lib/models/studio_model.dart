@@ -199,16 +199,19 @@ class StudioJobCreateRequest {
 class StudioJobCreateResponse {
   final String jobId;
   final String status;
+  final String? taskId;
 
   const StudioJobCreateResponse({
     required this.jobId,
     required this.status,
+    this.taskId,
   });
 
   factory StudioJobCreateResponse.fromJson(Map<String, dynamic> json) {
     return StudioJobCreateResponse(
       jobId: json['job_id']?.toString() ?? '',
       status: json['status']?.toString() ?? 'pending',
+      taskId: json['taskId']?.toString() ?? json['task_id']?.toString(),
     );
   }
 }
@@ -220,6 +223,7 @@ class StudioShot {
   final String status;
   final List<String> outputs;
   final String? error;
+  final String? taskId;
 
   const StudioShot({
     required this.id,
@@ -228,6 +232,7 @@ class StudioShot {
     required this.status,
     this.outputs = const [],
     this.error,
+    this.taskId,
   });
 
   factory StudioShot.fromJson(Map<String, dynamic> json) {
@@ -241,6 +246,7 @@ class StudioShot {
               .toList() ??
           const [],
       error: json['error']?.toString(),
+      taskId: json['taskId']?.toString() ?? json['task_id']?.toString(),
     );
   }
 }
