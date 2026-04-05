@@ -2,9 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:logger/logger.dart';
 import 'package:market_mind/constants/app_colors.dart';
 import 'package:market_mind/models/product_model.dart';
 import 'package:market_mind/screens/product/poster_detail_screen.dart';
+import 'package:market_mind/services/cloudinary_service.dart';
+import 'package:market_mind/services/kie_ai_service.dart';
 import 'package:market_mind/services/product_service.dart';
 import 'package:market_mind/utils/app_notification.dart';
 
@@ -25,7 +28,10 @@ class PosterConfigScreen extends StatefulWidget {
 class _PosterConfigScreenState extends State<PosterConfigScreen> {
   late ProductModel _product;
   bool _isGenerating = false;
-  Timer? _pollTimer;
+  final Logger _logger = Logger(printer: PrettyPrinter());
+
+  // Active Kie AI polls (taskId → completer)
+  final Map<String, Completer<void>> _activePolls = {};
 
   // Config state
   String _aspectRatio = 'auto';
@@ -46,32 +52,166 @@ class _PosterConfigScreenState extends State<PosterConfigScreen> {
   void initState() {
     super.initState();
     _product = widget.product;
-    _startPollingIfNeeded();
+    // Start polling any existing active jobs via Kie AI
+    _pollExistingActiveJobs();
   }
 
   @override
   void dispose() {
-    _pollTimer?.cancel();
+    // Cancel all active polls
+    for (final completer in _activePolls.values) {
+      if (!completer.isCompleted) completer.complete();
+    }
+    _activePolls.clear();
     _styleController.dispose();
     _overlayTextController.dispose();
     super.dispose();
   }
 
-  // ─── Polling ─────────────────────────────────────────────────────
-  bool get _hasActiveJobs => _product.posters.any(
-        (p) => p.status == 'processing' || p.status == 'pending',
+  // ─── Kie AI Direct Polling ──────────────────────────────────────
+
+  /// Poll any existing processing/pending jobs that have a taskId
+  void _pollExistingActiveJobs() {
+    for (final poster in _product.posters) {
+      if ((poster.status == 'processing' || poster.status == 'pending') &&
+          poster.taskId != null &&
+          poster.taskId!.isNotEmpty) {
+        _pollKieAiForPoster(poster.id, poster.taskId!);
+      }
+    }
+  }
+
+  /// Start polling Kie AI directly for a specific poster job's taskId
+  Future<void> _pollKieAiForPoster(String posterId, String taskId) async {
+    if (_activePolls.containsKey(taskId)) return; // Already polling
+
+    final completer = Completer<void>();
+    _activePolls[taskId] = completer;
+
+    _logger.i('Starting Kie AI direct poll for task: $taskId (poster: $posterId)');
+
+    try {
+      final result = await kieAiService.pollUntilComplete(
+        taskId,
+        pollInterval: const Duration(seconds: 5),
+        timeout: const Duration(minutes: 10),
+        onProgress: (progress) {
+          if (!mounted || completer.isCompleted) return;
+          _logger.i('Kie AI task $taskId progress: ${progress.status} '
+              '${progress.progress != null ? "${(progress.progress! * 100).toInt()}%" : ""}');
+        },
       );
 
-  void _startPollingIfNeeded() {
-    if (_hasActiveJobs && _pollTimer == null) {
-      _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
-        await _refreshProduct(silent: true);
-        if (!_hasActiveJobs) {
-          _pollTimer?.cancel();
-          _pollTimer = null;
+      if (!mounted) return;
+
+      if (result.isCompleted) {
+        _logger.i('Kie AI task completed! Output: ${result.outputUrl}');
+        _logger.i('Result URLs: ${result.resultUrls}');
+
+        String? permanentUrl;
+
+        if (result.outputUrl != null) {
+          // Step 1: Get downloadable URL from Kie AI (temp, 20 min expiry)
+          String downloadableUrl = result.outputUrl!;
+          final tempDownloadUrl = await kieAiService.getDownloadUrl(result.outputUrl!);
+          if (tempDownloadUrl != null) {
+            downloadableUrl = tempDownloadUrl;
+          }
+          _logger.i('Step 1 done: Got downloadable URL');
+
+          // Step 2: Upload to Cloudinary for permanent storage
+          _logger.i('Step 2: Uploading to Cloudinary...');
+          permanentUrl = await cloudinaryService.uploadImageFromUrl(
+            downloadableUrl,
+            folder: 'posters',
+          );
+          _logger.i('Step 2 done: Cloudinary URL = $permanentUrl');
         }
-      });
+
+        // Step 3: Update local UI immediately
+        _updatePosterResult(posterId, permanentUrl ?? '');
+
+        // Step 4: Save the permanent URL to backend DB
+        if (permanentUrl != null && permanentUrl.isNotEmpty) {
+          try {
+            _logger.i('Step 3: Saving poster result to backend...');
+            await productService.updatePosterResult(
+              productId: _product.id,
+              posterId: posterId,
+              status: 'completed',
+              resultUrl: permanentUrl,
+            );
+            _logger.i('Step 3 done: Poster saved to backend DB ✅');
+          } catch (e) {
+            _logger.e('Failed to save poster to backend (image is still on Cloudinary): $e');
+          }
+        }
+
+        if (mounted) {
+          AppNotification.success(
+            context,
+            message: 'Poster generated successfully! 🎨',
+          );
+        }
+      } else if (result.isFailed) {
+        _logger.e('Kie AI task failed: ${result.error}');
+        _updatePosterFailed(posterId, result.error ?? 'Generation failed');
+
+        if (mounted) {
+          AppNotification.error(
+            context,
+            message: 'Poster generation failed: ${result.error ?? "Unknown error"}',
+          );
+        }
+      }
+    } catch (e) {
+      _logger.e('Error polling Kie AI: $e');
+    } finally {
+      _activePolls.remove(taskId);
+      if (!completer.isCompleted) completer.complete();
     }
+  }
+
+  /// Update local poster status to completed with result URL
+  void _updatePosterResult(String posterId, String resultUrl) {
+    if (!mounted) return;
+    setState(() {
+      final updatedPosters = _product.posters.map((p) {
+        if (p.id == posterId) {
+          return PosterJob(
+            id: p.id,
+            status: 'completed',
+            config: p.config,
+            taskId: p.taskId,
+            resultUrl: resultUrl,
+            createdAt: p.createdAt,
+          );
+        }
+        return p;
+      }).toList();
+      _product = _product.copyWith(posters: updatedPosters);
+    });
+  }
+
+  /// Update local poster status to failed
+  void _updatePosterFailed(String posterId, String error) {
+    if (!mounted) return;
+    setState(() {
+      final updatedPosters = _product.posters.map((p) {
+        if (p.id == posterId) {
+          return PosterJob(
+            id: p.id,
+            status: 'failed',
+            config: p.config,
+            taskId: p.taskId,
+            createdAt: p.createdAt,
+            error: error,
+          );
+        }
+        return p;
+      }).toList();
+      _product = _product.copyWith(posters: updatedPosters);
+    });
   }
 
   Future<void> _refreshProduct({bool silent = false}) async {
@@ -113,8 +253,17 @@ class _PosterConfigScreenState extends State<PosterConfigScreen> {
         message: 'Poster generation started',
       );
 
-      // Start polling for this job
-      _startPollingIfNeeded();
+      // Find the newly created poster job and poll Kie AI directly
+      final newPoster = updatedProduct.posters.lastOrNull;
+      if (newPoster != null && newPoster.taskId != null && newPoster.taskId!.isNotEmpty) {
+        _logger.i('New poster job created with taskId: ${newPoster.taskId}');
+        _pollKieAiForPoster(newPoster.id, newPoster.taskId!);
+      } else {
+        _logger.w('Poster job created but no taskId found. '
+            'Poster IDs: ${updatedProduct.posters.map((p) => "${p.id}:${p.taskId}").join(", ")}');
+        // Fall back to backend polling
+        _startBackendPolling();
+      }
     } catch (e) {
       if (!mounted) return;
       AppNotification.error(
@@ -126,6 +275,34 @@ class _PosterConfigScreenState extends State<PosterConfigScreen> {
         setState(() => _isGenerating = false);
       }
     }
+  }
+
+  /// Fallback: poll backend if no taskId is available
+  void _startBackendPolling() {
+    Timer.periodic(const Duration(seconds: 5), (timer) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      await _refreshProduct(silent: true);
+
+      // Check if any poster now has a taskId we can poll
+      for (final poster in _product.posters) {
+        if ((poster.status == 'processing' || poster.status == 'pending') &&
+            poster.taskId != null &&
+            poster.taskId!.isNotEmpty &&
+            !_activePolls.containsKey(poster.taskId)) {
+          _pollKieAiForPoster(poster.id, poster.taskId!);
+          timer.cancel();
+          return;
+        }
+      }
+
+      // Stop if no active jobs
+      if (!_product.posters.any((p) => p.status == 'processing' || p.status == 'pending')) {
+        timer.cancel();
+      }
+    });
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────

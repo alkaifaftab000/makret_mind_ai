@@ -16,6 +16,7 @@ import 'package:market_mind/models/product_model.dart';
 import 'package:market_mind/utils/app_notification.dart';
 import 'package:market_mind/utils/image_utils.dart';
 import 'package:market_mind/utils/permission_utils.dart';
+import 'package:market_mind/services/app_options_service.dart';
 
 // ─── Tab definition ───────────────────────────────────────────────
 enum HomeTab { video, poster, aiStudio, brand }
@@ -72,8 +73,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final brands = await brandService.getAllBrands();
-      final allProducts = await productService.getAllProducts();
+      // Fetch options + data in parallel
+      final results = await Future.wait([
+        brandService.getAllBrands(),
+        productService.getAllProducts(),
+        appOptionsService.fetchOptions(),
+      ]);
+      final brands = results[0] as List<BrandModel>;
+      final allProducts = results[1] as List<ProductModel>;
 
       setState(() {
         _brands = brands;
@@ -1371,10 +1378,10 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
             // ─── Target Audience (multi-select chips) ─────────
             _ChipSelectSection(
               label: 'Target Audience',
-              options: AppStrings.audienceOptions,
+              options: appOptionsService.audienceOptions,
               selectedOptions: _selectedAudiences,
               isDark: isDark,
-              displayLabels: AppStrings.audienceLabels,
+              displayLabels: appOptionsService.audienceLabels,
               onChanged: (selected) {
                 setState(() {
                   if (_selectedAudiences.contains(selected)) {
@@ -1390,10 +1397,10 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
             // ─── Category (multi-select chips) ────────────────
             _ChipSelectSection(
               label: 'Category',
-              options: AppStrings.categoryOptions,
+              options: appOptionsService.categoryOptions,
               selectedOptions: _selectedCategories,
               isDark: isDark,
-              displayLabels: AppStrings.categoryLabels,
+              displayLabels: appOptionsService.categoryLabels,
               onChanged: (selected) {
                 setState(() {
                   if (_selectedCategories.contains(selected)) {
