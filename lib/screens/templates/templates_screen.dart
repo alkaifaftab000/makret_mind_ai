@@ -1,3 +1,5 @@
+import 'package:market_mind/utils/picker_utils.dart';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:market_mind/constants/app_colors.dart';
@@ -144,16 +146,29 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
   }
 
   void _viewTemplate(_Template template) {
-    // Templates are demo content — show a preview snackbar for now
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Template preview: ${template.name}',
-          style: GoogleFonts.poppins(),
-        ),
-        duration: const Duration(seconds: 2),
-      ),
+    PickerUtils.showBrandPickerThenNavigate(
+      context,
+      'studio',
+      templateName: template.name,
+      templateCategory: template.category,
+      initialPrompt: template.config.prompt,
+      initialAspectRatio: _mapTemplateAspectRatio(template.config.aspectRatio),
     );
+  }
+
+  String _mapTemplateAspectRatio(String value) {
+    switch (value.trim()) {
+      case '16:9':
+      case '9:16':
+      case '1:1':
+      case '4:3':
+      case '3:2':
+      case '4:5':
+      case '21:9':
+        return value.trim();
+      default:
+        return 'auto';
+    }
   }
 
   @override

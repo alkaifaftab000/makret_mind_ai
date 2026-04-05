@@ -45,7 +45,7 @@ class ProductService {
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
       }
       return [];
-    } catch (_) {
+    } catch (e) { print("ERROR PARSING: $e"); 
       return [];
     }
   }
@@ -58,7 +58,7 @@ class ProductService {
         return ProductModel.fromJson(response.data);
       }
       return null;
-    } catch (_) {
+    } catch (e) { print("ERROR PARSING: $e"); 
       return null;
     }
   }

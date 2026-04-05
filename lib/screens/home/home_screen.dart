@@ -10,6 +10,8 @@ import 'package:market_mind/screens/brand_details/brand_details_screen.dart';
 import 'package:market_mind/screens/product/poster_config_screen.dart';
 import 'package:market_mind/screens/product/product_screen.dart';
 import 'package:market_mind/screens/product/video_config_screen.dart';
+import 'package:market_mind/screens/studio/studio_product_jobs_screen.dart';
+import 'package:market_mind/screens/studio/studio_template_flow_screen.dart';
 import 'package:market_mind/services/brand_service.dart';
 import 'package:market_mind/services/product_service.dart';
 import 'package:market_mind/models/product_model.dart';
@@ -49,8 +51,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   HomeTab _activeTab = HomeTab.brand;
   List<BrandModel> _brands = [];
   List<BrandModel> _filteredBrands = [];
+  List<ProductModel> _allProducts = [];
   List<ProductModel> _videoProducts = [];
   List<ProductModel> _posterProducts = [];
+  List<ProductModel> _studioProducts = [];
   bool _isLoading = true;
 
   late AnimationController _fabAnimController;
@@ -85,8 +89,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       setState(() {
         _brands = brands;
         _filteredBrands = brands;
+        _allProducts = allProducts;
         _videoProducts = allProducts.where((p) => p.hasVideos).toList();
         _posterProducts = allProducts.where((p) => p.hasPosters).toList();
+        _studioProducts = allProducts.where((p) => p.hasStudioImages).toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -147,8 +153,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               message: AppStrings.brandRequiredMessage);
           return;
         }
-        AppNotification.info(context,
-            message: 'AI Studio coming soon!');
+        _showBrandPickerThenNavigate('studio');
         break;
     }
   }
@@ -196,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'Choose a brand to create ${productType == 'video' ? 'a video' : 'a poster'} for',
+                'Choose a brand to create ${productType == 'video' ? 'a video' : (productType == 'studio' ? 'a studio job' : 'a poster')} for',
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   color: isDark
@@ -336,7 +341,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               child: Text(
                 productType == 'video'
                     ? 'Choose a product to generate a video ad'
-                    : 'Choose a product to generate a poster',
+                    : (productType == 'studio'
+                        ? 'Choose a product to generate a studio job'
+                        : 'Choose a product to generate a poster'),
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   color: isDark
@@ -419,7 +426,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       trailing: Icon(
                         productType == 'video'
                             ? Icons.videocam_rounded
-                            : Icons.image_rounded,
+                            : (productType == 'studio'
+                                ? Icons.auto_awesome_rounded
+                                : Icons.image_rounded),
                         size: 18,
                         color: isDark
                             ? AppColors.textMutedDark
@@ -444,11 +453,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           builder: (_) => PosterConfigScreen(product: product),
         ),
       ).then((_) => _loadData());
-    } else {
+    } else if (productType == 'video') {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => VideoConfigScreen(product: product),
+        ),
+      ).then((_) => _loadData());
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => StudioTemplateFlowScreen(
+            product: product,
+            templateName: 'AI Studio',
+            templateCategory: 'Custom',
+            initialPrompt: '',
+            initialAspectRatio: 'auto',
+          ),
         ),
       ).then((_) => _loadData());
     }
@@ -699,13 +721,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   // ─── AI Studio tab ─────────────────────────────────────────────
   Widget _buildAIStudioTab(bool isDark) {
-    return _EmptyState(
-      icon: Icons.auto_awesome_rounded,
-      title: AppStrings.noStudioJobsYet,
-      subtitle: _hasBrands
-          ? AppStrings.noStudioJobsSubtitle
-          : AppStrings.brandRequiredMessage,
-      isDark: isDark,
+    if (_studioProducts.isEmpty) {
+      return _EmptyState(
+        icon: Icons.auto_awesome_rounded,
+        title: AppStrings.noStudioJobsYet,
+        subtitle: _hasBrands
+            ? AppStrings.noStudioJobsSubtitle
+            : AppStrings.brandRequiredMessage,
+        isDark: isDark,
+      );
+    }
+
+    return _buildProductList(
+      _studioProducts,
+      isDark,
+      Icons.auto_awesome_rounded,
+      'studio',
     );
   }
 
@@ -776,6 +807,16 @@ class _ProductTile extends StatelessWidget {
   });
 
   Color get _statusColor {
+    if (productType == 'studio') {
+      final studioStatus = product.latestStudioImage?.status ?? 'none';
+      if (studioStatus == 'failed') return Colors.redAccent;
+      if (studioStatus == 'processing' || studioStatus == 'pending') {
+        return const Color(0xFFFDAA5E);
+      }
+      if (studioStatus == 'completed') return const Color(0xFF00B894);
+      return Colors.grey;
+    }
+
     // Determine overall status based on latest generations
     final posterStatus = product.latestPoster?.status ?? 'none';
     final videoStatus = product.latestVideo?.status ?? 'none';

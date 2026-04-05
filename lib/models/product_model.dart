@@ -232,6 +232,67 @@ class VideoJob {
   bool get requiresApproval => status == 'requires_approval';
 }
 
+class StudioImageConfig {
+  final String? lighting;
+  final String? backgroundPrompt;
+  final String? cameraAngle;
+
+  const StudioImageConfig({
+    this.lighting,
+    this.backgroundPrompt,
+    this.cameraAngle,
+  });
+
+  factory StudioImageConfig.fromJson(Map<String, dynamic> json) {
+    return StudioImageConfig(
+      lighting: json['lighting']?.toString(),
+      backgroundPrompt: json['backgroundPrompt']?.toString(),
+      cameraAngle: json['cameraAngle']?.toString(),
+    );
+  }
+}
+
+class StudioImageJob {
+  final String id;
+  final String status;
+  final StudioImageConfig? config;
+  final List<String> outputs;
+  final DateTime createdAt;
+  final String? error;
+
+  const StudioImageJob({
+    required this.id,
+    required this.status,
+    this.config,
+    this.outputs = const [],
+    required this.createdAt,
+    this.error,
+  });
+
+  factory StudioImageJob.fromJson(Map<String, dynamic> json) {
+    return StudioImageJob(
+      id: json['id']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'pending',
+      config: json['config'] != null
+          ? StudioImageConfig.fromJson(json['config'] as Map<String, dynamic>)
+          : null,
+      outputs: (json['outputs'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'].toString())
+          : DateTime.now(),
+      error: json['error']?.toString(),
+    );
+  }
+
+  bool get isCompleted => status == 'completed';
+  bool get isPending => status == 'pending';
+  bool get isProcessing => status == 'processing';
+  bool get isFailed => status == 'failed';
+}
+
 // ─── Product Model ────────────────────────────────────────────────
 class ProductModel {
   final String id;
@@ -241,6 +302,7 @@ class ProductModel {
   final List<String> images;
   final List<PosterJob> posters;
   final List<VideoJob> videos;
+  final List<StudioImageJob> studioImages;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -252,6 +314,7 @@ class ProductModel {
     required this.images,
     this.posters = const [],
     this.videos = const [],
+    this.studioImages = const [],
     required this.createdAt,
     required this.updatedAt,
   });
@@ -273,6 +336,10 @@ class ProductModel {
       videos: (json['videos'] as List<dynamic>?)
               ?.map((e) => VideoJob.fromJson(e as Map<String, dynamic>))
               .toList() ??
+          [],
+        studioImages: ((json['studioImages'] ?? json['studio_images'] ?? json['studioJobs'] ?? json['studio_jobs']) as List<dynamic>?)
+            ?.map((e) => StudioImageJob.fromJson(e as Map<String, dynamic>))
+            .toList() ??
           [],
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'].toString())
@@ -299,8 +366,11 @@ class ProductModel {
   /// Quick helpers
   bool get hasPosters => posters.isNotEmpty;
   bool get hasVideos => videos.isNotEmpty;
+  bool get hasStudioImages => studioImages.isNotEmpty;
   PosterJob? get latestPoster => posters.isNotEmpty ? posters.last : null;
   VideoJob? get latestVideo => videos.isNotEmpty ? videos.last : null;
+  StudioImageJob? get latestStudioImage =>
+      studioImages.isNotEmpty ? studioImages.last : null;
 
   /// For backward compat with existing UI that reads imagePaths
   List<String> get imagePaths => images;
@@ -311,6 +381,7 @@ class ProductModel {
     List<String>? images,
     List<PosterJob>? posters,
     List<VideoJob>? videos,
+    List<StudioImageJob>? studioImages,
     DateTime? updatedAt,
   }) {
     return ProductModel(
@@ -321,6 +392,7 @@ class ProductModel {
       images: images ?? this.images,
       posters: posters ?? this.posters,
       videos: videos ?? this.videos,
+      studioImages: studioImages ?? this.studioImages,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
