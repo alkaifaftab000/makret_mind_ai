@@ -31,6 +31,39 @@ class BrandModel extends HiveObject {
   @HiveField(8)
   late DateTime updatedAt;
 
+  @HiveField(9)
+  late String? tagline;
+
+  @HiveField(10)
+  late String? websiteUrl;
+
+  @HiveField(11)
+  late String? brandVoice;
+
+  @HiveField(12)
+  late String? colorPrimary;
+
+  @HiveField(13)
+  late String? colorSecondary;
+
+  @HiveField(14)
+  late String? colorAccent;
+
+  @HiveField(15)
+  late String? instagram;
+
+  @HiveField(16)
+  late String? tiktok;
+
+  @HiveField(17)
+  late String? facebook;
+
+  @HiveField(18)
+  late String? twitter;
+
+  @HiveField(19)
+  late String? youtube;
+
   BrandModel({
     required this.id,
     required this.name,
@@ -39,6 +72,17 @@ class BrandModel extends HiveObject {
     this.category,
     required this.imagePath,
     this.productions = 0,
+    this.tagline,
+    this.websiteUrl,
+    this.brandVoice,
+    this.colorPrimary,
+    this.colorSecondary,
+    this.colorAccent,
+    this.instagram,
+    this.tiktok,
+    this.facebook,
+    this.twitter,
+    this.youtube,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -52,6 +96,9 @@ class BrandModel extends HiveObject {
       'id': id,
       'name': name,
       'description': description,
+      'tagline': tagline,
+      'website_url': websiteUrl,
+      'brand_voice': brandVoice,
       'target_audience': targetAudience != null && targetAudience!.isNotEmpty
           ? targetAudience!.split(', ')
           : [],
@@ -59,6 +106,20 @@ class BrandModel extends HiveObject {
           ? category!.split(', ')
           : [],
       'logo': imagePath,
+      if (colorPrimary != null || colorSecondary != null || colorAccent != null)
+        'color_palette': {
+          if (colorPrimary != null) 'primary': colorPrimary,
+          if (colorSecondary != null) 'secondary': colorSecondary,
+          if (colorAccent != null) 'accent': colorAccent,
+        },
+      if (instagram != null || tiktok != null || facebook != null || twitter != null || youtube != null)
+        'social_links': {
+          if (instagram != null) 'instagram': instagram,
+          if (tiktok != null) 'tiktok': tiktok,
+          if (facebook != null) 'facebook': facebook,
+          if (twitter != null) 'twitter': twitter,
+          if (youtube != null) 'youtube': youtube,
+        },
       'productions': productions,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -67,14 +128,27 @@ class BrandModel extends HiveObject {
 
   /// Create from JSON (for API responses)
   factory BrandModel.fromJson(Map<String, dynamic> json) {
+    final colorPalette = json['color_palette'] as Map<String, dynamic>?;
+    final socialLinks = json['social_links'] as Map<String, dynamic>?;
     return BrandModel(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       description: json['description']?.toString(),
+      tagline: json['tagline']?.toString(),
+      websiteUrl: json['website_url']?.toString(),
+      brandVoice: json['brand_voice']?.toString(),
       targetAudience: _parseListField(json['target_audience'] ?? json['targetAudience']),
       category: _parseListField(json['category']),
       imagePath: json['logo']?.toString() ?? json['imagePath']?.toString() ?? '',
       productions: json['product_count'] as int? ?? json['productions'] as int? ?? 0,
+      colorPrimary: colorPalette?['primary']?.toString(),
+      colorSecondary: colorPalette?['secondary']?.toString(),
+      colorAccent: colorPalette?['accent']?.toString(),
+      instagram: socialLinks?['instagram']?.toString(),
+      tiktok: socialLinks?['tiktok']?.toString(),
+      facebook: socialLinks?['facebook']?.toString(),
+      twitter: socialLinks?['twitter']?.toString(),
+      youtube: socialLinks?['youtube']?.toString(),
       createdAt: json['created_at'] != null 
           ? DateTime.parse(json['created_at'].toString())
           : (json['createdAt'] != null ? DateTime.parse(json['createdAt'].toString()) : null),
@@ -104,6 +178,17 @@ class BrandModel extends HiveObject {
     String? category,
     String? imagePath,
     int? productions,
+    String? tagline,
+    String? websiteUrl,
+    String? brandVoice,
+    String? colorPrimary,
+    String? colorSecondary,
+    String? colorAccent,
+    String? instagram,
+    String? tiktok,
+    String? facebook,
+    String? twitter,
+    String? youtube,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -115,6 +200,17 @@ class BrandModel extends HiveObject {
       category: category ?? this.category,
       imagePath: imagePath ?? this.imagePath,
       productions: productions ?? this.productions,
+      tagline: tagline ?? this.tagline,
+      websiteUrl: websiteUrl ?? this.websiteUrl,
+      brandVoice: brandVoice ?? this.brandVoice,
+      colorPrimary: colorPrimary ?? this.colorPrimary,
+      colorSecondary: colorSecondary ?? this.colorSecondary,
+      colorAccent: colorAccent ?? this.colorAccent,
+      instagram: instagram ?? this.instagram,
+      tiktok: tiktok ?? this.tiktok,
+      facebook: facebook ?? this.facebook,
+      twitter: twitter ?? this.twitter,
+      youtube: youtube ?? this.youtube,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

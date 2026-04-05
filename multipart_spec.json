@@ -1,0 +1,10 @@
+﻿{
+    "content":  {
+                    "multipart/form-data":  {
+                                                "schema":  {
+                                                               "$ref":  "#/components/schemas/Body_create_product_with_images_api_products_with_images_post"
+                                                           }
+                                            }
+                },
+    "required":  true
+}

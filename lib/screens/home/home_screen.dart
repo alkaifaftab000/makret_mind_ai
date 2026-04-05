@@ -1097,8 +1097,21 @@ class CreateBrandSheet extends StatefulWidget {
 class _CreateBrandSheetState extends State<CreateBrandSheet> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _taglineController = TextEditingController();
+  final _websiteUrlController = TextEditingController();
+  final _brandVoiceController = TextEditingController();
+  final _colorPrimaryController = TextEditingController();
+  final _colorSecondaryController = TextEditingController();
+  final _colorAccentController = TextEditingController();
+  final _instagramController = TextEditingController();
+  final _tiktokController = TextEditingController();
+  final _facebookController = TextEditingController();
+  final _twitterController = TextEditingController();
+  final _youtubeController = TextEditingController();
+
   String? _selectedImagePath;
   bool _isSubmitting = false;
+  bool _showAdvanced = false;
 
   final Set<String> _selectedAudiences = {};
   final Set<String> _selectedCategories = {};
@@ -1107,6 +1120,17 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    _taglineController.dispose();
+    _websiteUrlController.dispose();
+    _brandVoiceController.dispose();
+    _colorPrimaryController.dispose();
+    _colorSecondaryController.dispose();
+    _colorAccentController.dispose();
+    _instagramController.dispose();
+    _tiktokController.dispose();
+    _facebookController.dispose();
+    _twitterController.dispose();
+    _youtubeController.dispose();
     super.dispose();
   }
 
@@ -1145,6 +1169,34 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
     }
   }
 
+  Map<String, String?>? _buildColorPalette() {
+    final p = _colorPrimaryController.text.trim();
+    final s = _colorSecondaryController.text.trim();
+    final a = _colorAccentController.text.trim();
+    if (p.isEmpty && s.isEmpty && a.isEmpty) return null;
+    return {
+      if (p.isNotEmpty) 'primary': p,
+      if (s.isNotEmpty) 'secondary': s,
+      if (a.isNotEmpty) 'accent': a,
+    };
+  }
+
+  Map<String, String?>? _buildSocialLinks() {
+    final ig = _instagramController.text.trim();
+    final tt = _tiktokController.text.trim();
+    final fb = _facebookController.text.trim();
+    final tw = _twitterController.text.trim();
+    final yt = _youtubeController.text.trim();
+    if (ig.isEmpty && tt.isEmpty && fb.isEmpty && tw.isEmpty && yt.isEmpty) return null;
+    return {
+      if (ig.isNotEmpty) 'instagram': ig,
+      if (tt.isNotEmpty) 'tiktok': tt,
+      if (fb.isNotEmpty) 'facebook': fb,
+      if (tw.isNotEmpty) 'twitter': tw,
+      if (yt.isNotEmpty) 'youtube': yt,
+    };
+  }
+
   Future<void> _submitBrand() async {
     if (_nameController.text.isEmpty) {
       AppNotification.warning(context, message: 'Brand name is required');
@@ -1161,12 +1213,26 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
       final brand = await brandService.createBrandWithLogo(
         name: _nameController.text.trim(),
         logoFile: File(_selectedImagePath!),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        tagline: _taglineController.text.trim().isEmpty
+            ? null
+            : _taglineController.text.trim(),
+        websiteUrl: _websiteUrlController.text.trim().isEmpty
+            ? null
+            : _websiteUrlController.text.trim(),
+        brandVoice: _brandVoiceController.text.trim().isEmpty
+            ? null
+            : _brandVoiceController.text.trim(),
         targetAudience: _selectedAudiences.isEmpty
             ? null
             : _selectedAudiences.toList(),
         category: _selectedCategories.isEmpty
             ? null
             : _selectedCategories.toList(),
+        colorPalette: _buildColorPalette(),
+        socialLinks: _buildSocialLinks(),
       );
 
       if (mounted) {
@@ -1193,6 +1259,9 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
 
     return Container(
       color: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
       child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           16, 16, 16,
@@ -1280,6 +1349,15 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
             ),
             const SizedBox(height: 12),
 
+            // ─── Tagline ──────────────────────────────────────
+            _FormField(
+              label: 'Tagline',
+              hint: 'e.g., Innovation meets style',
+              controller: _taglineController,
+              isDark: isDark,
+            ),
+            const SizedBox(height: 12),
+
             // ─── Description ──────────────────────────────────
             _FormField(
               label: 'Description',
@@ -1326,6 +1404,164 @@ class _CreateBrandSheetState extends State<CreateBrandSheet> {
                 });
               },
             ),
+            const SizedBox(height: 16),
+
+            // ─── Advanced Options Toggle ──────────────────────
+            GestureDetector(
+              onTap: () => setState(() => _showAdvanced = !_showAdvanced),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.divider.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _showAdvanced ? Icons.expand_less : Icons.expand_more,
+                      color: AppColors.buttonPrimary,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Advanced Options',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.buttonPrimary,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'Brand Voice, Colors, Socials',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: isDark
+                            ? AppColors.textMutedDark
+                            : AppColors.textMutedLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ─── Advanced Fields (collapsible) ────────────────
+            if (_showAdvanced) ...[
+              const SizedBox(height: 16),
+
+              // Brand Voice
+              _FormField(
+                label: 'Brand Voice',
+                hint: 'e.g., Friendly, Professional, Bold',
+                controller: _brandVoiceController,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 12),
+
+              // Website URL
+              _FormField(
+                label: 'Website URL',
+                hint: 'e.g., https://mybrand.com',
+                controller: _websiteUrlController,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 16),
+
+              // ─── Color Palette ────────────────────────────
+              Text(
+                'Color Palette',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _FormField(
+                      label: 'Primary',
+                      hint: '#FF5733',
+                      controller: _colorPrimaryController,
+                      isDark: isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _FormField(
+                      label: 'Secondary',
+                      hint: '#333333',
+                      controller: _colorSecondaryController,
+                      isDark: isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _FormField(
+                      label: 'Accent',
+                      hint: '#00BCD4',
+                      controller: _colorAccentController,
+                      isDark: isDark,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // ─── Social Links ─────────────────────────────
+              Text(
+                'Social Links',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _FormField(
+                label: 'Instagram',
+                hint: 'https://instagram.com/mybrand',
+                controller: _instagramController,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 8),
+              _FormField(
+                label: 'TikTok',
+                hint: 'https://tiktok.com/@mybrand',
+                controller: _tiktokController,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 8),
+              _FormField(
+                label: 'Facebook',
+                hint: 'https://facebook.com/mybrand',
+                controller: _facebookController,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 8),
+              _FormField(
+                label: 'Twitter / X',
+                hint: 'https://x.com/mybrand',
+                controller: _twitterController,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 8),
+              _FormField(
+                label: 'YouTube',
+                hint: 'https://youtube.com/@mybrand',
+                controller: _youtubeController,
+                isDark: isDark,
+              ),
+            ],
             const SizedBox(height: 24),
 
             // ─── Buttons ──────────────────────────────────────

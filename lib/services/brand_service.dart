@@ -88,11 +88,17 @@ class BrandService {
   Future<BrandModel> createBrand({
     required String name,
     String? logo,
+    String? description,
+    String? tagline,
+    String? websiteUrl,
+    String? brandVoice,
     List<String>? targetAudience,
     List<String>? category,
+    Map<String, String?>? colorPalette,
+    Map<String, String?>? socialLinks,
   }) async {
     try {
-      _logger.i('Creating new brand (No logo file)...');
+      _logger.i('Creating new brand...');
       
       final currentUserId = authService.currentUser?.id;
       if (currentUserId == null) {
@@ -103,10 +109,16 @@ class BrandService {
         'name': name,
         'user_id': currentUserId,
         if (logo != null) 'logo': logo,
+        if (description != null && description.isNotEmpty) 'description': description,
+        if (tagline != null && tagline.isNotEmpty) 'tagline': tagline,
+        if (websiteUrl != null && websiteUrl.isNotEmpty) 'website_url': websiteUrl,
+        if (brandVoice != null && brandVoice.isNotEmpty) 'brand_voice': brandVoice,
         if (targetAudience != null && targetAudience.isNotEmpty)
           'target_audience': targetAudience,
         if (category != null && category.isNotEmpty)
           'category': category,
+        if (colorPalette != null) 'color_palette': colorPalette,
+        if (socialLinks != null) 'social_links': socialLinks,
       };
 
       final response = await _dio.post(
@@ -133,8 +145,14 @@ class BrandService {
   Future<BrandModel> createBrandWithLogo({
     required String name,
     required File logoFile,
+    String? description,
+    String? tagline,
+    String? websiteUrl,
+    String? brandVoice,
     List<String>? targetAudience,
     List<String>? category,
+    Map<String, String?>? colorPalette,
+    Map<String, String?>? socialLinks,
   }) async {
     try {
       _logger.i('Uploading logo to Cloudinary...');
@@ -150,8 +168,14 @@ class BrandService {
       return await createBrand(
         name: name,
         logo: logoUrl,
+        description: description,
+        tagline: tagline,
+        websiteUrl: websiteUrl,
+        brandVoice: brandVoice,
         targetAudience: targetAudience,
         category: category,
+        colorPalette: colorPalette,
+        socialLinks: socialLinks,
       );
     } catch (e) {
       _logger.e('Error creating brand with logo: $e');

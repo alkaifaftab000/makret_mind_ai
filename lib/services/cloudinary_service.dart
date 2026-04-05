@@ -14,8 +14,8 @@ class CloudinaryService {
   final Logger _logger = Logger(printer: PrettyPrinter());
 
   // Ideally, these would go in .env, but hardcoding per user request for now
-  static const String _cloudName = 'dzxkvvkdj';
-  static const String _uploadPreset = 'market_mind_uploads'; // Make sure to configure an unsigned upload preset in Cloudinary!
+  static const String _cloudName = 'dz4muwh1c';
+  static const String _uploadPreset = 'marketmind'; // Make sure to configure an unsigned upload preset in Cloudinary!
 
   final _cloudinary = CloudinaryPublic(_cloudName, _uploadPreset, cache: false);
 

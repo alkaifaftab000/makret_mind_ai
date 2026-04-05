@@ -24,6 +24,17 @@ class BrandModelAdapter extends TypeAdapter<BrandModel> {
       category: fields[4] as String?,
       imagePath: fields[5] as String,
       productions: fields[6] as int,
+      tagline: fields[9] as String?,
+      websiteUrl: fields[10] as String?,
+      brandVoice: fields[11] as String?,
+      colorPrimary: fields[12] as String?,
+      colorSecondary: fields[13] as String?,
+      colorAccent: fields[14] as String?,
+      instagram: fields[15] as String?,
+      tiktok: fields[16] as String?,
+      facebook: fields[17] as String?,
+      twitter: fields[18] as String?,
+      youtube: fields[19] as String?,
       createdAt: fields[7] as DateTime?,
       updatedAt: fields[8] as DateTime?,
     );
@@ -32,7 +43,7 @@ class BrandModelAdapter extends TypeAdapter<BrandModel> {
   @override
   void write(BinaryWriter writer, BrandModel obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(20)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -50,7 +61,29 @@ class BrandModelAdapter extends TypeAdapter<BrandModel> {
       ..writeByte(7)
       ..write(obj.createdAt)
       ..writeByte(8)
-      ..write(obj.updatedAt);
+      ..write(obj.updatedAt)
+      ..writeByte(9)
+      ..write(obj.tagline)
+      ..writeByte(10)
+      ..write(obj.websiteUrl)
+      ..writeByte(11)
+      ..write(obj.brandVoice)
+      ..writeByte(12)
+      ..write(obj.colorPrimary)
+      ..writeByte(13)
+      ..write(obj.colorSecondary)
+      ..writeByte(14)
+      ..write(obj.colorAccent)
+      ..writeByte(15)
+      ..write(obj.instagram)
+      ..writeByte(16)
+      ..write(obj.tiktok)
+      ..writeByte(17)
+      ..write(obj.facebook)
+      ..writeByte(18)
+      ..write(obj.twitter)
+      ..writeByte(19)
+      ..write(obj.youtube);
   }
 
   @override
