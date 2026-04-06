@@ -10,6 +10,7 @@ flutter:
   assets:
     - assets/icon/
     - assets/video/
+    - assets/video/template_video/
     - assets/onboarding/
     - assets/auth/
   uses-material-design: true
