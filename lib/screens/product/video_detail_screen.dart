@@ -55,8 +55,11 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
 
   Future<void> _initVideoPlayer(String url) async {
     try {
-      _videoController =
-          VideoPlayerController.networkUrl(Uri.parse(url));
+      if (url.startsWith('assets/')) {
+        _videoController = VideoPlayerController.asset(url);
+      } else {
+        _videoController = VideoPlayerController.networkUrl(Uri.parse(url));
+      }
       await _videoController!.initialize();
       if (mounted) {
         setState(() {
@@ -90,6 +93,10 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
   Future<void> _downloadVideo() async {
     final url = widget.video.finalVideoUrl;
     if (url == null) return;
+    if (url.startsWith('assets/')) {
+      AppNotification.info(context, message: 'Cannot download a local asset dummy video');
+      return;
+    }
 
     setState(() {
       _isDownloading = true;

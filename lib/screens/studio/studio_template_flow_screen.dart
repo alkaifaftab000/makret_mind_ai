@@ -11,6 +11,8 @@ import "package:market_mind/widgets/kie_image.dart";
 import "package:market_mind/services/kie_service.dart";
 import "package:market_mind/services/cloudinary_service.dart";
 import "package:market_mind/services/kie_ai_service.dart";
+import "package:market_mind/screens/studio/studio_detail_screen.dart";
+
 class StudioTemplateFlowScreen extends StatefulWidget {
   final ProductModel product;
   final String templateName;
@@ -164,6 +166,20 @@ class _StudioTemplateFlowScreenState extends State<StudioTemplateFlowScreen> {
         if (mounted) {
           AppNotification.success(context, message: 'Studio image generated successfully! 🎨');
         }
+
+        // Permanently persist to backend logic
+        try {
+          final locallyKnownJob = _fetchedStudioJobs.where((j) => j.id == shotId).firstOrNull;
+          if (locallyKnownJob != null) {
+             final relevantJobId = locallyKnownJob.jobId ?? locallyKnownJob.id;
+             await studioService.updateStudioJobResult(
+                jobId: relevantJobId,
+                shotId: shotId,
+                status: 'completed',
+                outputs: permanentUrls,
+             );
+          }
+        } catch (_) {}
         
         // Kick off another backend refresh to grab any backend updates too
         await _refreshProduct(silent: true);
@@ -212,6 +228,7 @@ class _StudioTemplateFlowScreenState extends State<StudioTemplateFlowScreen> {
           for (final shot in job.shots) {
             mappedJobs.add(StudioImageJob(
               id: shot.id,
+              jobId: job.id, // Parent job ID!
               status: shot.status,
               outputs: shot.outputs,
               createdAt: job.createdAt ?? DateTime.now(),
@@ -812,12 +829,9 @@ class _StudioTemplateFlowScreenState extends State<StudioTemplateFlowScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => _StudioJobResultScreen(
+                                  builder: (_) => StudioDetailScreen(
                                     job: job,
-                                    productId: _product.id,
-                                    onImageSelected: () {
-                                      _refreshProduct();
-                                    },
+                                    productName: _product.name,
                                   ),
                                 ),
                               );

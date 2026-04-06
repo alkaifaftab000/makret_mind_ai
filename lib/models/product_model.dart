@@ -254,6 +254,7 @@ class StudioImageConfig {
 
 class StudioImageJob {
   final String id;
+  final String? jobId;
   final String status;
   final StudioImageConfig? config;
   final List<String> outputs;
@@ -263,6 +264,7 @@ class StudioImageJob {
 
   const StudioImageJob({
     required this.id,
+    this.jobId,
     required this.status,
     this.config,
     this.outputs = const [],

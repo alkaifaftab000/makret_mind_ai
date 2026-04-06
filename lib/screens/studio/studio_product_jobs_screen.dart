@@ -5,6 +5,7 @@ import 'package:market_mind/models/product_model.dart';
 import 'package:market_mind/models/studio_model.dart';
 import 'package:market_mind/services/studio_service.dart';
 import 'package:market_mind/utils/app_notification.dart';
+import 'package:market_mind/screens/studio/studio_detail_screen.dart';
 
 class StudioProductJobsScreen extends StatefulWidget {
   final ProductModel product;
@@ -60,29 +61,32 @@ class _StudioProductJobsScreenState extends State<StudioProductJobsScreen> {
       return;
     }
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _StudioJobDetailsSheet(
-        isDark: isDark,
-        product: widget.product,
-        job: details,
-        onImageSelected: (imageUrl) async {
-          try {
-            await studioService.selectStudioImage(
-              SelectStudioImageRequest(
-                productId: widget.product.id,
-                imageUrl: imageUrl,
-              ),
-            );
-            if (!mounted) return;
-            AppNotification.success(context, message: 'Image selected for product');
-          } catch (_) {
-            if (!mounted) return;
-            AppNotification.error(context, message: 'Failed to select image');
-          }
-        },
+    final firstShot = details.shots.isNotEmpty ? details.shots.firstWhere(
+        (s) => s.outputs.isNotEmpty,
+        orElse: () => details.shots.first
+    ) : null;
+
+    if (firstShot == null) {
+      AppNotification.warning(context, message: 'No shots found for this job');
+      return;
+    }
+
+    final mappedJob = StudioImageJob(
+      id: firstShot.id,
+      jobId: details.id,
+      status: firstShot.status,
+      outputs: firstShot.outputs,
+      createdAt: details.createdAt ?? DateTime.now(),
+      error: firstShot.error,
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StudioDetailScreen(
+          job: mappedJob,
+          productName: widget.product.name,
+        ),
       ),
     );
   }
@@ -195,147 +199,4 @@ class _StudioProductJobsScreenState extends State<StudioProductJobsScreen> {
   }
 }
 
-class _StudioJobDetailsSheet extends StatelessWidget {
-  final bool isDark;
-  final ProductModel product;
-  final StudioJob job;
-  final Future<void> Function(String imageUrl) onImageSelected;
 
-  const _StudioJobDetailsSheet({
-    required this.isDark,
-    required this.product,
-    required this.job,
-    required this.onImageSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final outputs = job.allOutputs;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkBackground : AppColors.lightBackground,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.86,
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 48,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'Job Details',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Status: ${job.status}',
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'Generated Images',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-              ),
-            ),
-            const SizedBox(height: 10),
-            if (outputs.isEmpty)
-              Text(
-                'No outputs yet. Try again after processing completes.',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
-                ),
-              )
-            else
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: outputs.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 0.78,
-                ),
-                itemBuilder: (_, index) {
-                  final imageUrl = outputs[index];
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkCard : AppColors.lightCard,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.all(8),
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: Image.network(
-                              imageUrl,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                color: isDark ? AppColors.darkBackground : AppColors.lightBackground,
-                                child: const Icon(Icons.broken_image_rounded),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () => onImageSelected(imageUrl),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.buttonPrimary,
-                              foregroundColor: AppColors.buttonText,
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: Text(
-                              'Select',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}

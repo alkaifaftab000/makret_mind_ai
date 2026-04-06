@@ -127,6 +127,64 @@ class StudioService {
       throw Exception('Failed to select studio image: ${response.statusCode}');
     }
   }
+
+  /// Update a specific shot's result in the backend DB.
+  /// Sends the updated shots array via PATCH.
+  Future<StudioJob> updateStudioJobResult({
+    required String jobId,
+    required String shotId,
+    required String status,
+    required List<String> outputs,
+  }) async {
+    try {
+      // Fetch current job to get the full shots array
+      final job = await getStudioJob(jobId);
+      if (job == null) throw Exception('Studio job not found');
+
+      // Update the specific shot in the array
+      final updatedShots = job.shots.map((s) {
+        if (s.id == shotId || (jobId == shotId && job.shots.length == 1)) {
+          return StudioShot(
+            id: s.id,
+            modelId: s.modelId,
+            sceneId: s.sceneId,
+            status: status,
+            outputs: outputs,
+            error: s.error,
+            taskId: s.taskId,
+          );
+        }
+        return s;
+      }).toList();
+
+      // PATCH the job with the updated shots array
+      final response = await _dio.patch(
+        '${ApiConstants.studioJobs}/$jobId',
+        data: {
+          'shots': updatedShots.map((s) => {
+            'id': s.id,
+            'model_id': s.modelId,
+            'scene_id': s.sceneId,
+            'status': s.status,
+            'outputs': s.outputs,
+            'error': s.error,
+            'task_id': s.taskId,
+          }).toList(),
+          // Auto-mark the whole job completed if all shots are done
+          if (updatedShots.every((s) => s.status == 'completed' || s.status == 'failed'))
+            'status': updatedShots.any((s) => s.status == 'failed') ? 'failed' : 'completed',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return StudioJob.fromJson(response.data);
+      }
+      throw Exception('Failed to patch studio job');
+    } catch (e) {
+      _logger.e('Error updating studio result: $e');
+      rethrow;
+    }
+  }
 }
 
 final studioService = StudioService();

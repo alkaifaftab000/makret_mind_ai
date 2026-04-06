@@ -6,6 +6,9 @@ import 'package:market_mind/constants/app_colors.dart';
 import 'package:market_mind/constants/app_strings.dart';
 import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/utils/search_bar.dart';
+import 'package:video_player/video_player.dart';
+import 'package:market_mind/models/product_model.dart';
+import 'package:market_mind/screens/product/video_detail_screen.dart';
 
 class TemplatesScreen extends StatefulWidget {
   const TemplatesScreen({super.key});
@@ -31,7 +34,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
       id: '1',
       name: 'Medicine Product Showcase',
       category: 'Medicine',
-      thumbnail: 'assets/video/short_clip3.mp4',
+      thumbnail: 'assets/video/short_clip1.mp4',
       config: _VideoConfig(
         prompt: 'Professional medicine product presentation',
         tone: 'Professional',
@@ -45,7 +48,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
       id: '2',
       name: 'Healthcare Service',
       category: 'Healthcare',
-      thumbnail: 'assets/video/short_clip3.mp4',
+      thumbnail: 'assets/video/short_clip2.mp4',
       config: _VideoConfig(
         prompt: 'Healthcare service promotion video',
         tone: 'Caring',
@@ -73,7 +76,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
       id: '4',
       name: 'Jewelry Collection',
       category: 'Jewelry',
-      thumbnail: 'assets/video/short_clip3.mp4',
+      thumbnail: 'assets/video/final_video.mp4',
       config: _VideoConfig(
         prompt: 'Elegant jewelry showcase',
         tone: 'Luxury',
@@ -87,7 +90,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
       id: '5',
       name: 'Makeup Tutorial',
       category: 'Makeup',
-      thumbnail: 'assets/video/short_clip3.mp4',
+      thumbnail: 'assets/video/short_clip1.mp4',
       config: _VideoConfig(
         prompt: 'Step-by-step makeup application',
         tone: 'Friendly',
@@ -101,7 +104,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
       id: '6',
       name: 'Wellness Product',
       category: 'Healthcare',
-      thumbnail: 'assets/video/short_clip3.mp4',
+      thumbnail: 'assets/video/short_clip2.mp4',
       config: _VideoConfig(
         prompt: 'Wellness and health product benefits',
         tone: 'Motivating',
@@ -146,13 +149,26 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
   }
 
   void _viewTemplate(_Template template) {
-    PickerUtils.showBrandPickerThenNavigate(
+    Navigator.push(
       context,
-      'studio',
-      templateName: template.name,
-      templateCategory: template.category,
-      initialPrompt: template.config.prompt,
-      initialAspectRatio: _mapTemplateAspectRatio(template.config.aspectRatio),
+      MaterialPageRoute(
+        builder: (_) => VideoDetailScreen(
+          productName: template.name,
+          video: VideoJob(
+            id: 'dummy_${template.id}',
+            status: 'completed',
+            createdAt: DateTime.now(),
+            finalVideoUrl: template.thumbnail,
+            config: VideoConfig(
+              tone: template.config.tone,
+              duration: template.config.videoLength,
+              aspectRatio: template.config.aspectRatio,
+              userPrompt: template.config.prompt,
+            ),
+            scenes: const [],
+          ),
+        ),
+      ),
     );
   }
 
@@ -295,13 +311,19 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
+              child: SizedBox.expand(
+                child: _VideoThumbnail(assetPath: template.thumbnail),
+              ),
+            ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
               child: Container(
-                color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                color: Colors.black.withValues(alpha: 0.1),
                 child: Center(
                   child: Icon(
                     Icons.play_circle_fill_rounded,
                     size: 54,
-                    color: AppColors.buttonPrimary,
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
               ),
@@ -383,4 +405,50 @@ class _VideoConfig {
     required this.aspectRatio,
     required this.videoLength,
   });
+}
+
+class _VideoThumbnail extends StatefulWidget {
+  final String assetPath;
+
+  const _VideoThumbnail({required this.assetPath});
+
+  @override
+  State<_VideoThumbnail> createState() => _VideoThumbnailState();
+}
+
+class _VideoThumbnailState extends State<_VideoThumbnail> {
+  VideoPlayerController? _controller;
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.asset(widget.assetPath)
+      ..initialize().then((_) {
+        if (mounted) setState(() => _initialized = true);
+      }).catchError((_) {
+        // Silently fail if asset doesn't exist
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_initialized || _controller == null) {
+      return Container(color: AppColors.darkBackground); // Loading state
+    }
+    return FittedBox(
+      fit: BoxFit.cover,
+      child: SizedBox(
+        width: _controller!.value.size.width,
+        height: _controller!.value.size.height,
+        child: VideoPlayer(_controller!),
+      ),
+    );
+  }
 }
