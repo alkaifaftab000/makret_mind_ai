@@ -254,19 +254,23 @@ class StudioImageConfig {
 
 class StudioImageJob {
   final String id;
+  final String? jobId;
   final String status;
   final StudioImageConfig? config;
   final List<String> outputs;
   final DateTime createdAt;
   final String? error;
+  final String? taskId;
 
   const StudioImageJob({
     required this.id,
+    this.jobId,
     required this.status,
     this.config,
     this.outputs = const [],
     required this.createdAt,
     this.error,
+    this.taskId,
   });
 
   factory StudioImageJob.fromJson(Map<String, dynamic> json) {
@@ -284,6 +288,7 @@ class StudioImageJob {
           ? DateTime.parse(json['createdAt'].toString())
           : DateTime.now(),
       error: json['error']?.toString(),
+      taskId: json['taskId']?.toString() ?? json['task_id']?.toString(),
     );
   }
 

@@ -6,6 +6,10 @@ import 'package:market_mind/constants/app_colors.dart';
 import 'package:market_mind/constants/app_strings.dart';
 import 'package:market_mind/constants/app_text_styles.dart';
 import 'package:market_mind/utils/search_bar.dart';
+import 'package:video_player/video_player.dart';
+import 'package:market_mind/models/product_model.dart';
+import 'package:market_mind/screens/product/video_detail_screen.dart';
+import 'package:market_mind/screens/templates/template_image_detail_screen.dart';
 
 class TemplatesScreen extends StatefulWidget {
   const TemplatesScreen({super.key});
@@ -19,64 +23,115 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
   String _selectedCategory = 'All';
   final List<String> _categories = [
     'All',
-    'Medicine',
-    'Healthcare',
-    'Cosmetic',
-    'Jewelry',
-    'Makeup',
+    'Fashion & Beauty',
+    'Lifestyle',
+    'E-Commerce',
+    'Professional',
+    'Minimalist',
+  ];
+
+  final List<String> _aiStudioTemplates = [
+    'assets/video/template_aistudio/1.png',
+    'assets/video/template_aistudio/2.jpeg',
+    'assets/video/template_aistudio/3.png',
+    'assets/video/template_aistudio/4.png',
+    'assets/video/template_aistudio/5.png',
+    'assets/video/template_aistudio/6.png',
+    'assets/video/template_aistudio/7.png',
+    'assets/video/template_aistudio/8.png',
+    'assets/video/template_aistudio/9.png',
+    'assets/video/template_aistudio/10.jpeg',
+    'assets/video/template_aistudio/11.jpeg',
+    'assets/video/template_aistudio/12.jpeg',
+    'assets/video/template_aistudio/13.jpeg',
+    'assets/video/template_aistudio/14.jpeg',
+  ];
+
+  final List<String> _posterTemplates = [
+    'assets/video/template_poster/1.png',
+    'assets/video/template_poster/2.png',
+    'assets/video/template_poster/3.png',
   ];
 
   final List<_Template> _templates = [
     _Template(
       id: '1',
-      name: 'Medicine Product Showcase',
-      category: 'Medicine',
-      thumbnail: 'assets/video/short_clip3.mp4',
+      name: 'Fashion Ad',
+      category: 'Fashion & Beauty',
+      thumbnail: 'assets/video/template_video/template_video1.mp4',
       config: _VideoConfig(
-        prompt: 'Professional medicine product presentation',
-        tone: 'Professional',
-        modelType: 'Standard',
-        audioType: 'Background Music',
-        aspectRatio: '16:9',
-        videoLength: '30s',
-      ),
-    ),
-    _Template(
-      id: '2',
-      name: 'Healthcare Service',
-      category: 'Healthcare',
-      thumbnail: 'assets/video/short_clip3.mp4',
-      config: _VideoConfig(
-        prompt: 'Healthcare service promotion video',
-        tone: 'Caring',
-        modelType: 'Enhanced',
-        audioType: 'Narration',
+        prompt: 'Trendy fashion advertisement',
+        tone: 'Stylish',
+        modelType: 'Premium',
+        audioType: 'Upbeat Music',
         aspectRatio: '9:16',
         videoLength: '15s',
       ),
     ),
     _Template(
-      id: '3',
-      name: 'Cosmetic Product Demo',
-      category: 'Cosmetic',
-      thumbnail: 'assets/video/short_clip3.mp4',
+      id: '2',
+      name: 'Cosmetic Promo',
+      category: 'Fashion & Beauty',
+      thumbnail: 'assets/video/template_video/template_video2.mp4',
       config: _VideoConfig(
         prompt: 'Beautiful cosmetic product demonstration',
         tone: 'Engaging',
         modelType: 'Premium',
-        audioType: 'Upbeat Music',
+        audioType: 'Soft Music',
         aspectRatio: '1:1',
         videoLength: '20s',
       ),
     ),
     _Template(
-      id: '4',
-      name: 'Jewelry Collection',
-      category: 'Jewelry',
-      thumbnail: 'assets/video/short_clip3.mp4',
+      id: '3',
+      name: 'Modern Lifestyle',
+      category: 'Lifestyle',
+      thumbnail: 'assets/video/template_video/template_video3.mp4',
       config: _VideoConfig(
-        prompt: 'Elegant jewelry showcase',
-        tone: 'Luxury',
+        prompt: 'Energetic modern lifestyle montage',
+        tone: 'Vibrant',
+        modelType: 'Standard',
+        audioType: 'Pop Music',
+        aspectRatio: '16:9',
+        videoLength: '30s',
+      ),
+    ),
+    _Template(
+      id: '4',
+      name: 'Product Showcase',
+      category: 'E-Commerce',
+      thumbnail: 'assets/video/template_video/template_video4.mp4',
+      config: _VideoConfig(
+        prompt: 'Clean e-commerce product showcase',
+        tone: 'Professional',
+        modelType: 'Enhanced',
+        audioType: 'Background Music',
+        aspectRatio: '1:1',
+        videoLength: '15s',
+      ),
+    ),
+    _Template(
+      id: '5',
+      name: 'Corporate Overview',
+      category: 'Professional',
+      thumbnail: 'assets/video/template_video/template_video5.mp4',
+      config: _VideoConfig(
+        prompt: 'Professional corporate branding overview',
+        tone: 'Corporate',
+        modelType: 'Standard',
+        audioType: 'Ambient Music',
+        aspectRatio: '16:9',
+        videoLength: '45s',
+      ),
+    ),
+    _Template(
+      id: '6',
+      name: 'Simple Elegance',
+      category: 'Minimalist',
+      thumbnail: 'assets/video/template_video/template6.mp4',
+      config: _VideoConfig(
+        prompt: 'Minimalist and elegant presentation',
+        tone: 'Calm',
         modelType: 'Premium',
         audioType: 'Classical Music',
         aspectRatio: '16:9',
@@ -84,31 +139,31 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
       ),
     ),
     _Template(
-      id: '5',
-      name: 'Makeup Tutorial',
-      category: 'Makeup',
-      thumbnail: 'assets/video/short_clip3.mp4',
+      id: '7',
+      name: 'Trendy Sale',
+      category: 'E-Commerce',
+      thumbnail: 'assets/video/template_video/template_video7.mp4',
       config: _VideoConfig(
-        prompt: 'Step-by-step makeup application',
-        tone: 'Friendly',
-        modelType: 'Standard',
-        audioType: 'Narration',
+        prompt: 'High-energy trendy flash sale promo',
+        tone: 'Exciting',
+        modelType: 'Enhanced',
+        audioType: 'Upbeat Music',
         aspectRatio: '9:16',
-        videoLength: '45s',
+        videoLength: '15s',
       ),
     ),
     _Template(
-      id: '6',
-      name: 'Wellness Product',
-      category: 'Healthcare',
-      thumbnail: 'assets/video/short_clip3.mp4',
+      id: '8',
+      name: 'Luxury Collection',
+      category: 'Fashion & Beauty',
+      thumbnail: 'assets/video/template_video/template_video8.mp4',
       config: _VideoConfig(
-        prompt: 'Wellness and health product benefits',
-        tone: 'Motivating',
-        modelType: 'Enhanced',
-        audioType: 'Background Music',
+        prompt: 'Premium luxury collection reveal',
+        tone: 'Luxury',
+        modelType: 'Premium',
+        audioType: 'Elegant Music',
         aspectRatio: '16:9',
-        videoLength: '20s',
+        videoLength: '30s',
       ),
     ),
   ];
@@ -146,13 +201,26 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
   }
 
   void _viewTemplate(_Template template) {
-    PickerUtils.showBrandPickerThenNavigate(
+    Navigator.push(
       context,
-      'studio',
-      templateName: template.name,
-      templateCategory: template.category,
-      initialPrompt: template.config.prompt,
-      initialAspectRatio: _mapTemplateAspectRatio(template.config.aspectRatio),
+      MaterialPageRoute(
+        builder: (_) => VideoDetailScreen(
+          productName: template.name,
+          video: VideoJob(
+            id: 'dummy_${template.id}',
+            status: 'completed',
+            createdAt: DateTime.now(),
+            finalVideoUrl: template.thumbnail,
+            config: VideoConfig(
+              tone: template.config.tone,
+              duration: template.config.videoLength,
+              aspectRatio: template.config.aspectRatio,
+              userPrompt: template.config.prompt,
+            ),
+            scenes: const [],
+          ),
+        ),
+      ),
     );
   }
 
@@ -240,36 +308,121 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Grid of Templates
+          // Content Area
           Expanded(
-            child: _filtered.isEmpty
-                ? Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 30),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Title: Video Templates
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
                     child: Text(
-                      AppStrings.noTemplatesFound,
+                      'Video Templates',
                       style: GoogleFonts.poppins(
-                        color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                       ),
                     ),
-                  )
-                : Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                    child: GridView.builder(
-                      itemCount: _filtered.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 0.85,
+                  ),
+
+                  // ── Horizontal Video Templates
+                  SizedBox(
+                    height: 240,
+                    child: _filtered.isEmpty
+                        ? Center(
+                            child: Text(
+                              AppStrings.noTemplatesFound,
+                              style: GoogleFonts.poppins(
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _filtered.length,
+                            separatorBuilder: (_, __) => const SizedBox(width: 14),
+                            itemBuilder: (_, index) {
+                              final template = _filtered[index];
+                              return SizedBox(
+                                width: 160,
+                                child: _buildTemplateCard(isDark, template),
+                              );
+                            },
                           ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // ── Title: AI Studio Templates
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Text(
+                      'AI Studio Templates',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                      ),
+                    ),
+                  ),
+
+                  // ── Horizontal AI Studio Images
+                  SizedBox(
+                    height: 220,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _aiStudioTemplates.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 14),
                       itemBuilder: (_, index) {
-                        final template = _filtered[index];
-                        return _buildTemplateCard(isDark, template);
+                        return SizedBox(
+                          width: 160,
+                          child: _buildImageCard(isDark, _aiStudioTemplates[index], 'AI Studio Template'),
+                        );
                       },
                     ),
                   ),
+
+                  const SizedBox(height: 32),
+
+                  // ── Title: Poster Templates
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Text(
+                      'Poster Templates',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                      ),
+                    ),
+                  ),
+
+                  // ── Horizontal Poster Images
+                  SizedBox(
+                    height: 240, // Slightly taller since posters are often vertically dominant
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _posterTemplates.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 14),
+                      itemBuilder: (_, index) {
+                        return SizedBox(
+                          width: 170,
+                          child: _buildImageCard(isDark, _posterTemplates[index], 'Poster Template'),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -295,13 +448,19 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
+              child: SizedBox.expand(
+                child: _VideoThumbnail(assetPath: template.thumbnail),
+              ),
+            ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
               child: Container(
-                color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                color: Colors.black.withValues(alpha: 0.1),
                 child: Center(
                   child: Icon(
                     Icons.play_circle_fill_rounded,
                     size: 54,
-                    color: AppColors.buttonPrimary,
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
               ),
@@ -349,6 +508,48 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
       ),
     );
   }
+
+  Widget _buildImageCard(bool isDark, String imagePath, String templateCategory) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TemplateImageDetailScreen(
+              imagePath: imagePath,
+              templateCategory: templateCategory,
+              title: templateCategory.contains('AI') ? 'AI Studio Design' : 'Marketing Poster',
+            ),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Image.asset(
+            imagePath,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              color: isDark ? AppColors.darkCard : AppColors.lightCard,
+              child: Center(
+                child: Icon(Icons.image_not_supported_rounded, color: AppColors.textMutedDark),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _Template {
@@ -383,4 +584,50 @@ class _VideoConfig {
     required this.aspectRatio,
     required this.videoLength,
   });
+}
+
+class _VideoThumbnail extends StatefulWidget {
+  final String assetPath;
+
+  const _VideoThumbnail({required this.assetPath});
+
+  @override
+  State<_VideoThumbnail> createState() => _VideoThumbnailState();
+}
+
+class _VideoThumbnailState extends State<_VideoThumbnail> {
+  VideoPlayerController? _controller;
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.asset(widget.assetPath)
+      ..initialize().then((_) {
+        if (mounted) setState(() => _initialized = true);
+      }).catchError((_) {
+        // Silently fail if asset doesn't exist
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_initialized || _controller == null) {
+      return Container(color: AppColors.darkBackground); // Loading state
+    }
+    return FittedBox(
+      fit: BoxFit.cover,
+      child: SizedBox(
+        width: _controller!.value.size.width,
+        height: _controller!.value.size.height,
+        child: VideoPlayer(_controller!),
+      ),
+    );
+  }
 }

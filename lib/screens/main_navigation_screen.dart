@@ -40,40 +40,56 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ? AppColors.darkBackground
           : AppColors.lightBackground,
       body: _screens[_currentIndex],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkCard : Colors.white,
-          border: Border(top: BorderSide(color: AppColors.divider, width: 0.8)),
-        ),
-        child: BottomNavigationBar(
-          backgroundColor: isDark ? AppColors.darkCard : Colors.white,
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: AppColors.buttonPrimary,
-          unselectedItemColor: isDark
-              ? AppColors.textMutedDark
-              : AppColors.textMutedLight,
-          selectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-          ),
-          unselectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-          ),
-          items: List.generate(
-            _labels.length,
-            (index) => BottomNavigationBarItem(
-              icon: Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Icon(_icons[index], size: 24),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkCard : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: BottomNavigationBar(
+                elevation: 0,
+                backgroundColor: isDark ? AppColors.darkCard : Colors.white,
+                currentIndex: _currentIndex,
+                onTap: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                type: BottomNavigationBarType.fixed,
+                selectedItemColor: AppColors.buttonPrimary,
+                unselectedItemColor: isDark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
+                selectedLabelStyle: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelStyle: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+                items: List.generate(
+                  _labels.length,
+                  (index) => BottomNavigationBarItem(
+                    icon: Padding(
+                      padding: const EdgeInsets.only(bottom: 4, top: 4),
+                      child: Icon(_icons[index], size: 24),
+                    ),
+                    label: _labels[index],
+                  ),
+                ),
               ),
-              label: _labels[index],
             ),
           ),
         ),

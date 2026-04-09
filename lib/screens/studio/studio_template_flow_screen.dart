@@ -10,6 +10,8 @@ import "package:market_mind/utils/app_notification.dart";
 import "package:market_mind/widgets/kie_image.dart";
 import "package:market_mind/services/kie_service.dart";
 import "package:market_mind/services/cloudinary_service.dart";
+import "package:market_mind/services/kie_ai_service.dart";
+import "package:market_mind/screens/studio/studio_detail_screen.dart";
 
 class StudioTemplateFlowScreen extends StatefulWidget {
   final ProductModel product;
@@ -47,6 +49,9 @@ class _StudioTemplateFlowScreenState extends State<StudioTemplateFlowScreen> {
   late ProductModel _product;
   Timer? _pollTimer;
 
+  // Active Kie AI polls (taskId → completer)
+  final Map<String, Completer<void>> _activePolls = {};
+
   String _pose = '';
   String _expression = '';
   String _cameraAngle = 'eye level';
@@ -83,6 +88,10 @@ class _StudioTemplateFlowScreenState extends State<StudioTemplateFlowScreen> {
   @override
   void dispose() {
     _pollTimer?.cancel();
+    for (final completer in _activePolls.values) {
+      if (!completer.isCompleted) completer.complete();
+    }
+    _activePolls.clear();
     _promptController.dispose();
     super.dispose();
   }
@@ -98,6 +107,7 @@ class _StudioTemplateFlowScreenState extends State<StudioTemplateFlowScreen> {
       );
 
   void _startPollingIfNeeded() {
+    // Poll backend periodically
     if (_hasActiveJobs && _pollTimer == null) {
       _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
         await _refreshProduct(silent: true);
@@ -107,6 +117,104 @@ class _StudioTemplateFlowScreenState extends State<StudioTemplateFlowScreen> {
         }
       });
     }
+
+    // Direct Kie AI Polling if taskId is available
+    for (final job in _activeJobsList) {
+      if ((job.status == 'processing' || job.status == 'pending') &&
+          job.taskId != null &&
+          job.taskId!.isNotEmpty) {
+        _pollKieAiForStudioJob(job.id, job.taskId!);
+      }
+    }
+  }
+
+  Future<void> _pollKieAiForStudioJob(String shotId, String taskId) async {
+    if (_activePolls.containsKey(taskId)) return;
+
+    final completer = Completer<void>();
+    _activePolls[taskId] = completer;
+
+    try {
+      final result = await kieAiService.pollUntilComplete(
+        taskId,
+        pollInterval: const Duration(seconds: 5),
+        timeout: const Duration(minutes: 10),
+      );
+
+      if (!mounted) return;
+
+      if (result.isCompleted) {
+        List<String> permanentUrls = [];
+        
+        for (final url in result.resultUrls) {
+           String downloadableUrl = url;
+           final tempDownloadUrl = await kieAiService.getDownloadUrl(url);
+           if (tempDownloadUrl != null) {
+              downloadableUrl = tempDownloadUrl;
+           }
+           final uploadedUrl = await cloudinaryService.uploadImageFromUrl(
+              downloadableUrl,
+              folder: 'studio',
+           );
+           if (uploadedUrl != null) {
+              permanentUrls.add(uploadedUrl);
+           }
+        }
+
+        _updateJobLocally(shotId, 'completed', permanentUrls, null);
+
+        if (mounted) {
+          AppNotification.success(context, message: 'Studio image generated successfully! 🎨');
+        }
+
+        // Permanently persist to backend logic
+        try {
+          final locallyKnownJob = _fetchedStudioJobs.where((j) => j.id == shotId).firstOrNull;
+          if (locallyKnownJob != null) {
+             final relevantJobId = locallyKnownJob.jobId ?? locallyKnownJob.id;
+             await studioService.updateStudioJobResult(
+                jobId: relevantJobId,
+                shotId: shotId,
+                status: 'completed',
+                outputs: permanentUrls,
+             );
+          }
+        } catch (_) {}
+        
+        // Kick off another backend refresh to grab any backend updates too
+        await _refreshProduct(silent: true);
+      } else if (result.isFailed) {
+        _updateJobLocally(shotId, 'failed', const [], result.error ?? 'Generation failed');
+        if (mounted) {
+          AppNotification.error(context, message: 'Studio generation failed: ${result.error}');
+        }
+      }
+    } catch (e) {
+      // ignore
+    } finally {
+      _activePolls.remove(taskId);
+      if (!completer.isCompleted) completer.complete();
+    }
+  }
+
+  void _updateJobLocally(String shotId, String status, List<String> outputs, String? error) {
+    if (!mounted) return;
+    setState(() {
+      final updatedJobs = _fetchedStudioJobs.map((j) {
+        if (j.id == shotId) {
+          return StudioImageJob(
+            id: j.id,
+            status: status,
+            outputs: outputs.isNotEmpty ? outputs : j.outputs,
+            createdAt: j.createdAt,
+            error: error ?? j.error,
+            taskId: j.taskId,
+          );
+        }
+        return j;
+      }).toList();
+      _fetchedStudioJobs = updatedJobs;
+    });
   }
 
   Future<void> _refreshProduct({bool silent = false}) async {
@@ -120,15 +228,29 @@ class _StudioTemplateFlowScreenState extends State<StudioTemplateFlowScreen> {
           for (final shot in job.shots) {
             mappedJobs.add(StudioImageJob(
               id: shot.id,
+              jobId: job.id, // Parent job ID!
               status: shot.status,
               outputs: shot.outputs,
               createdAt: job.createdAt ?? DateTime.now(),
               error: shot.error,
+              taskId: shot.taskId,
             ));
           }
         }
         // ignore: empty_catches
       } catch (_) {}
+
+      // Preserve local completed jobs if backend is stale
+      for (var i = 0; i < mappedJobs.length; i++) {
+        final existing = _fetchedStudioJobs.where((j) => j.id == mappedJobs[i].id).firstOrNull;
+        if (existing != null && existing.status == 'completed' && mappedJobs[i].status != 'completed') {
+          // Backend is out of sync, keep our frontend updated version
+          mappedJobs[i] = existing;
+        } else if (existing != null && existing.status == 'failed' && mappedJobs[i].status != 'failed') {
+          // Keep our local failure error
+          mappedJobs[i] = existing;
+        }
+      }
 
       if (mounted) {
         setState(() {
@@ -253,6 +375,8 @@ class _StudioTemplateFlowScreenState extends State<StudioTemplateFlowScreen> {
             status: 'pending',
             outputs: const [],
             createdAt: DateTime.now(),
+            // Use the real taskId if returned by backend, never guess from jobId
+            taskId: jobResponse.taskId,
           ),
           ..._fetchedStudioJobs,
         ];
@@ -705,12 +829,9 @@ class _StudioTemplateFlowScreenState extends State<StudioTemplateFlowScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => _StudioJobResultScreen(
+                                  builder: (_) => StudioDetailScreen(
                                     job: job,
-                                    productId: _product.id,
-                                    onImageSelected: () {
-                                      _refreshProduct();
-                                    },
+                                    productName: _product.name,
                                   ),
                                 ),
                               );
