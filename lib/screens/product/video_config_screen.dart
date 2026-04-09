@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:market_mind/constants/app_colors.dart';
@@ -5,6 +6,7 @@ import 'package:market_mind/models/product_model.dart';
 import 'package:market_mind/screens/product/video_detail_screen.dart';
 import 'package:market_mind/services/product_service.dart';
 import 'package:market_mind/utils/app_notification.dart';
+import 'package:market_mind/services/kie_ai_service.dart';
 
 class VideoConfigScreen extends StatefulWidget {
   final ProductModel product;
@@ -25,6 +27,13 @@ class _VideoConfigScreenState extends State<VideoConfigScreen> {
   bool _isGenerating = false;
   bool _isRefreshing = false;
   bool _isApproving = false;
+  bool _isStartingGrok = false;
+
+  // Video engine: 'kling' | 'grok'
+  String _videoEngine = 'kling';
+
+  // Grok: DB-display poll timer (lightweight, 20s)
+  Timer? _grokPollTimer;
 
   // Config state
   String _tone = 'professional';
@@ -73,6 +82,7 @@ class _VideoConfigScreenState extends State<VideoConfigScreen> {
     super.initState();
     _product = widget.product;
     _initSceneControllers();
+    if (_product.hasActiveGrokJob) _startGrokPollTimer();
   }
 
   void _initSceneControllers() {
@@ -85,8 +95,41 @@ class _VideoConfigScreenState extends State<VideoConfigScreen> {
     }
   }
 
+  void _startGrokPollTimer() {
+    _grokPollTimer?.cancel();
+    _grokPollTimer = Timer.periodic(const Duration(seconds: 20), (_) => _pollGrokJobs());
+  }
+
+  void _stopGrokPollTimer() {
+    _grokPollTimer?.cancel();
+    _grokPollTimer = null;
+  }
+
+  Future<void> _pollGrokJobs() async {
+    if (!mounted) return;
+    final activeJobs = _product.grokVideoJobs.where((j) => j.isInProgress).toList();
+    if (activeJobs.isEmpty) { _stopGrokPollTimer(); return; }
+    try {
+      for (final job in activeJobs) {
+        final updated = await productService.getGrokVideoJobStatus(
+          productId: _product.id, jobId: job.id);
+        if (!mounted) return;
+        final updatedJobs = _product.grokVideoJobs
+            .map((j) => j.id == updated.id ? updated : j).toList();
+        setState(() => _product = _product.copyWith(grokVideoJobs: updatedJobs));
+        if (!updated.isInProgress) {
+          _stopGrokPollTimer();
+          if (updated.isCompleted && mounted) {
+            AppNotification.success(context, message: '🎬 Grok video ready!');
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
   @override
   void dispose() {
+    _grokPollTimer?.cancel();
     _promptController.dispose();
     for (final controllers in _sceneControllers.values) {
       for (final c in controllers) {
@@ -255,9 +298,225 @@ class _VideoConfigScreenState extends State<VideoConfigScreen> {
           _product = updated;
           _initSceneControllers();
         });
+        if (_product.hasActiveGrokJob) _startGrokPollTimer();
       }
     } catch (_) {}
     if (mounted) setState(() => _isRefreshing = false);
+  }
+
+  Future<void> _startGrokVideo() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Generate Grok Video?',
+              style: GoogleFonts.poppins(
+                fontSize: 16, fontWeight: FontWeight.w700,
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight)),
+          content: Text(
+            'Grok will generate two cinematic frames then create a '
+            '10-second advertisement video. Takes ~5–15 min.',
+            style: GoogleFonts.poppins(fontSize: 13,
+                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text('Cancel', style: GoogleFonts.poppins(
+                  color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight))),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6C63FF), foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              child: Text('Generate', style: GoogleFonts.poppins(fontWeight: FontWeight.w600))),
+          ],
+        );
+      },
+    );
+    if (confirm != true || !mounted) return;
+
+    setState(() => _isStartingGrok = true);
+
+    // ── Stage 1: Create job on backend — returns taskIds immediately ──
+    final Map<String, dynamic> jobMeta;
+    try {
+      final config = GrokVideoConfig(
+        aspectRatio: _mapAspectToGrok(_aspectRatio),
+        duration: '10',
+        resolution: '480p',
+        mode: 'normal',
+      );
+      jobMeta = await productService.createGrokVideoJob(
+        productId: _product.id,
+        config: config,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      AppNotification.error(context, message: 'Failed to start Grok video. Try again.');
+      setState(() => _isStartingGrok = false);
+      return;
+    }
+
+    final jobId = jobMeta['jobId'] as String? ?? '';
+    final startTaskId = jobMeta['startFrameTaskId'] as String? ?? '';
+    final endTaskId   = jobMeta['endFrameTaskId']   as String? ?? '';
+
+    if (jobId.isEmpty || startTaskId.isEmpty || endTaskId.isEmpty) {
+      if (!mounted) return;
+      AppNotification.error(context, message: 'Server returned incomplete job data.');
+      setState(() => _isStartingGrok = false);
+      return;
+    }
+
+    if (mounted) {
+      AppNotification.success(context, message: '⚡ Generating cinematic frames...');
+    }
+
+    // ── Stage 2: Poll KIE directly for both frames ──
+    // Run concurrently — 15 min timeout for frame tasks
+    final KieTaskResult startResult;
+    final KieTaskResult endResult;
+    try {
+      final results = await Future.wait([
+        kieAiService.pollUntilComplete(
+          startTaskId,
+          pollInterval: const Duration(seconds: 8),
+          timeout: const Duration(minutes: 15),
+          onProgress: (r) {
+            if (mounted) setState(() {}); // trigger UI redraw for status
+          },
+        ),
+        kieAiService.pollUntilComplete(
+          endTaskId,
+          pollInterval: const Duration(seconds: 8),
+          timeout: const Duration(minutes: 15),
+        ),
+      ]);
+      startResult = results[0];
+      endResult   = results[1];
+    } catch (e) {
+      if (!mounted) return;
+      AppNotification.error(context, message: 'Frame polling error: $e');
+      setState(() { _isStartingGrok = false; });
+      return;
+    }
+
+    // Check frames succeeded
+    if (!startResult.isCompleted || !endResult.isCompleted) {
+      final err = startResult.error ?? endResult.error ?? 'Frame generation failed';
+      if (!mounted) return;
+      AppNotification.error(context, message: '❌ $err');
+      setState(() { _isStartingGrok = false; });
+      return;
+    }
+
+    final startUrl = startResult.outputUrl ?? '';
+    final endUrl   = endResult.outputUrl   ?? '';
+
+    if (startUrl.isEmpty || endUrl.isEmpty) {
+      if (!mounted) return;
+      AppNotification.error(context, message: '❌ Frame URLs missing from KIE response');
+      setState(() { _isStartingGrok = false; });
+      return;
+    }
+
+    if (mounted) {
+      AppNotification.success(context, message: '🖼 Frames ready! Generating video...');
+    }
+
+    // ── Stage 3: Submit frames to backend → get video taskId ──
+    final Map<String, dynamic> videoMeta;
+    try {
+      videoMeta = await productService.submitGrokVideo(
+        productId: _product.id,
+        jobId: jobId,
+        startFrameUrl: startUrl,
+        endFrameUrl: endUrl,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      AppNotification.error(context, message: 'Video submission failed: $e');
+      setState(() { _isStartingGrok = false; });
+      return;
+    }
+
+    final videoTaskId = videoMeta['taskId'] as String? ?? '';
+    if (videoTaskId.isEmpty) {
+      if (!mounted) return;
+      AppNotification.error(context, message: 'No video taskId from server');
+      setState(() { _isStartingGrok = false; });
+      return;
+    }
+
+    // ── Stage 4: Poll KIE for video completion ──
+    KieTaskResult videoResult;
+    try {
+      videoResult = await kieAiService.pollUntilComplete(
+        videoTaskId,
+        pollInterval: const Duration(seconds: 15),
+        timeout: const Duration(minutes: 20),
+        onProgress: (r) {
+          if (mounted) setState(() {}); // keep UI alive
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      AppNotification.error(context, message: 'Video polling error: $e');
+      setState(() { _isStartingGrok = false; });
+      return;
+    }
+
+    if (!videoResult.isCompleted || (videoResult.outputUrl ?? '').isEmpty) {
+      if (!mounted) return;
+      AppNotification.error(context,
+          message: '❌ Video generation failed: ${videoResult.error ?? 'no URL returned'}');
+      setState(() { _isStartingGrok = false; });
+      return;
+    }
+
+    final finalVideoUrl = videoResult.outputUrl!;
+
+    // ── Stage 5: Persist to backend ──
+    try {
+      await productService.completeGrokVideoJob(
+        productId: _product.id,
+        jobId: jobId,
+        videoUrl: finalVideoUrl,
+      );
+    } catch (e) {
+      // Non-fatal — video is ready even if DB save fails
+      if (mounted) {
+        AppNotification.warning(context, message: 'Video ready but DB save failed: $e');
+      }
+    }
+
+    // ── Done ──
+    if (!mounted) return;
+    // Refresh product from backend to get updated grokVideoJobs
+    try {
+      final updated = await productService.getProductById(_product.id);
+      if (updated != null && mounted) setState(() => _product = updated);
+    } catch (_) {}
+
+    if (mounted) {
+      setState(() { _isStartingGrok = false; });
+      AppNotification.success(context, message: '🎬 Grok video ready!');
+    }
+  }
+
+  String _mapAspectToGrok(String ar) {
+    const map = {
+      'mobile': '9:16', 'desktop': '16:9',
+      'instagram_post': '1:1', 'instagram_reel': '9:16',
+      'instagram_story': '9:16', 'instagram_carousel': '1:1',
+      'youtube_short': '9:16', 'youtube_video': '16:9',
+      'youtube_ad': '16:9', 'tiktok_video': '9:16',
+      'linkedin_post': '4:5', 'facebook_post': '4:5',
+    };
+    return map[ar] ?? '16:9';
   }
 
   @override
@@ -446,6 +705,16 @@ class _VideoConfigScreenState extends State<VideoConfigScreen> {
               const SizedBox(height: 20),
             ],
 
+            // ─── Grok Jobs Section ───────────────────────────────────
+            if (_product.grokVideoJobs.isNotEmpty) ...[
+              _GrokJobsSection(
+                jobs: _product.grokVideoJobs.reversed.toList(),
+                productName: _product.name,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 20),
+            ],
+
             // ─── Config Section ──────────────────────
             if (approvalVideos.isEmpty && pendingVideos.isEmpty) ...[
               _SectionLabel('🎬  New Video', isDark: isDark),
@@ -462,7 +731,17 @@ class _VideoConfigScreenState extends State<VideoConfigScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Prompt
+                    // ─── Video Engine Picker ─────────────────────────
+                    _ConfigLabel('Video Engine', isDark: isDark),
+                    const SizedBox(height: 10),
+                    _VideoEnginePicker(
+                      selected: _videoEngine,
+                      isDark: isDark,
+                      onChanged: (v) => setState(() => _videoEngine = v),
+                    ),
+                    const SizedBox(height: 20),
+                    // Prompt (Kling only)
+                    if (_videoEngine == 'kling') ...[
                     _ConfigLabel('Ad Prompt *', isDark: isDark),
                     const SizedBox(height: 6),
                     TextField(
@@ -561,8 +840,9 @@ class _VideoConfigScreenState extends State<VideoConfigScreen> {
                       }).toList(),
                     ),
                     const SizedBox(height: 16),
+                    ], // end if kling (prompt + tone)
 
-                    // Aspect Ratio
+                    // Aspect Ratio (shared)
                     _ConfigLabel('Aspect Ratio', isDark: isDark),
                     const SizedBox(height: 8),
                     Wrap(
@@ -613,7 +893,8 @@ class _VideoConfigScreenState extends State<VideoConfigScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Duration
+                    // Duration (Kling only)
+                    if (_videoEngine == 'kling') ...[
                     _ConfigLabel('Duration', isDark: isDark),
                     const SizedBox(height: 8),
                     Row(
@@ -681,11 +962,53 @@ class _VideoConfigScreenState extends State<VideoConfigScreen> {
                       }).toList(),
                     ),
                     const SizedBox(height: 20),
+                    ], // end if kling (duration)
+
+                    // Grok info banner
+                    if (_videoEngine == 'grok') ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6C63FF).withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF6C63FF).withValues(alpha: 0.2)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('⚡', style: TextStyle(fontSize: 18)),
+                            const SizedBox(width: 10),
+                            Expanded(child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Auto-generated from your product',
+                                    style: GoogleFonts.poppins(
+                                        fontSize: 12, fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF6C63FF))),
+                                const SizedBox(height: 2),
+                                Text('Grok generates cinematic start + end frames using your '
+                                    'product images and brand details, then creates a 10-second '
+                                    'ad video. Takes ~5–15 min.',
+                                    style: GoogleFonts.poppins(fontSize: 11,
+                                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight)),
+                              ],
+                            )),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
 
                     // Generate Button
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
+                      child: _videoEngine == 'grok'
+                          ? _GrokGenerateButton(
+                              isLoading: _isStartingGrok,
+                              onPressed: _startGrokVideo,
+                              isDark: isDark,
+                            )
+                          : ElevatedButton(
                         onPressed: _isGenerating ? null : _generateVideo,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.buttonPrimary,
@@ -1492,6 +1815,274 @@ class _ConfigLabel extends StatelessWidget {
             ? AppColors.textSecondaryDark
             : AppColors.textSecondaryLight,
       ),
+    );
+  }
+}
+
+// ─── Video Engine Picker ──────────────────────────────────────────────────────
+class _VideoEnginePicker extends StatelessWidget {
+  final String selected;
+  final bool isDark;
+  final ValueChanged<String> onChanged;
+  const _VideoEnginePicker({required this.selected, required this.isDark, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(children: [
+      _EngineChip(label: 'Kling', icon: '🎞️', subtitle: 'Scene builder', value: 'kling',
+        selected: selected == 'kling', activeColor: AppColors.buttonPrimary,
+        isDark: isDark, onTap: () => onChanged('kling')),
+      const SizedBox(width: 10),
+      _EngineChip(label: 'Grok', icon: '⚡', subtitle: 'Cinematic AI', value: 'grok',
+        selected: selected == 'grok', activeColor: const Color(0xFF6C63FF),
+        isDark: isDark, onTap: () => onChanged('grok')),
+    ]);
+  }
+}
+
+class _EngineChip extends StatelessWidget {
+  final String label, icon, subtitle, value;
+  final bool selected, isDark;
+  final Color activeColor;
+  final VoidCallback onTap;
+  const _EngineChip({required this.label, required this.icon, required this.subtitle,
+    required this.value, required this.selected, required this.activeColor,
+    required this.isDark, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: selected
+                ? activeColor.withValues(alpha: 0.12)
+                : (isDark ? AppColors.darkBackground : AppColors.lightBackground),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? activeColor : AppColors.divider.withValues(alpha: 0.4),
+              width: selected ? 2 : 1,
+            ),
+          ),
+          child: Row(children: [
+            Text(icon, style: const TextStyle(fontSize: 20)),
+            const SizedBox(width: 10),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(label, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700,
+                  color: selected ? activeColor
+                      : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight))),
+              Text(subtitle, style: GoogleFonts.poppins(fontSize: 10,
+                  color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight)),
+            ]),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Grok Generate Button ─────────────────────────────────────────────────────
+class _GrokGenerateButton extends StatelessWidget {
+  final bool isLoading;
+  final VoidCallback onPressed;
+  final bool isDark;
+  const _GrokGenerateButton({required this.isLoading, required this.onPressed, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: isLoading ? null : onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF6C63FF), foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        elevation: 0,
+      ),
+      child: isLoading
+          ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const SizedBox(width: 18, height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation(Colors.white))),
+              const SizedBox(width: 10),
+              Text('Starting Pipeline...', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600)),
+            ])
+          : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Text('⚡', style: TextStyle(fontSize: 16)),
+              const SizedBox(width: 8),
+              Text('Generate with Grok', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600)),
+            ]),
+    );
+  }
+}
+
+// ─── Grok Jobs Section ────────────────────────────────────────────────────────
+class _GrokJobsSection extends StatelessWidget {
+  final List<GrokVideoJob> jobs;
+  final String productName;
+  final bool isDark;
+  const _GrokJobsSection({required this.jobs, required this.productName, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _SectionLabel('⚡  Grok Videos', isDark: isDark),
+      const SizedBox(height: 10),
+      ...jobs.map((job) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: _GrokJobCard(job: job, productName: productName, isDark: isDark),
+      )),
+    ]);
+  }
+}
+
+class _GrokJobCard extends StatelessWidget {
+  final GrokVideoJob job;
+  final String productName;
+  final bool isDark;
+  const _GrokJobCard({required this.job, required this.productName, required this.isDark});
+
+  void _viewImage(BuildContext context, String url, String title) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            InteractiveViewer(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.network(url, fit: BoxFit.contain),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                // Future enhancement: Download or share image
+                AppNotification.info(ctx, message: 'Share action coming soon');
+              },
+              icon: const Icon(Icons.share_rounded, size: 18),
+              label: Text('Share $title', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.buttonPrimary,
+                foregroundColor: AppColors.buttonText,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Color statusColor = job.isCompleted
+        ? const Color(0xFF00B894)
+        : job.isFailed ? Colors.redAccent : const Color(0xFFFDAA5E);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : AppColors.lightCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider.withValues(alpha: 0.2)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
+            child: Text(job.statusLabel, style: GoogleFonts.poppins(
+                fontSize: 11, fontWeight: FontWeight.w600, color: statusColor)),
+          ),
+          const Spacer(),
+          if (job.isInProgress) ...[
+            const SizedBox(width: 14, height: 14,
+                child: CircularProgressIndicator(strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(Color(0xFF6C63FF)))),
+            const SizedBox(width: 6),
+            Text('polling every 20s', style: GoogleFonts.poppins(fontSize: 10,
+                color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight)),
+          ],
+        ]),
+        if (job.startFrameUrl != null || job.endFrameUrl != null) ...[
+          const SizedBox(height: 10),
+          Row(children: [
+            if (job.startFrameUrl != null)
+              Expanded(child: GestureDetector(
+                onTap: () => _viewImage(context, job.startFrameUrl!, 'Start Frame'),
+                child: ClipRRect(borderRadius: BorderRadius.circular(10),
+                  child: Image.network(job.startFrameUrl!, height: 80, fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const SizedBox())),
+              )),
+            if (job.startFrameUrl != null && job.endFrameUrl != null) const SizedBox(width: 8),
+            if (job.endFrameUrl != null)
+              Expanded(child: GestureDetector(
+                onTap: () => _viewImage(context, job.endFrameUrl!, 'End Frame'),
+                child: ClipRRect(borderRadius: BorderRadius.circular(10),
+                  child: Image.network(job.endFrameUrl!, height: 80, fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const SizedBox())),
+              )),
+          ]),
+        ],
+        if (job.isCompleted && job.finalVideoUrl != null) ...[
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => VideoDetailScreen(
+                    productName: productName,
+                    // Map GrokVideoJob to a standard VideoJob for the player
+                    video: VideoJob(
+                      id: job.id,
+                      status: 'completed',
+                      createdAt: job.createdAt,
+                      finalVideoUrl: job.finalVideoUrl,
+                      scenes: [], 
+                    ),
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF00B894).withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF00B894).withValues(alpha: 0.3)),
+              ),
+              child: Row(children: [
+                const Icon(Icons.play_circle_outline_rounded, color: Color(0xFF00B894), size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Play Video', style: GoogleFonts.poppins(
+                    fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF00B894)))),
+                const Icon(Icons.chevron_right_rounded, color: Color(0xFF00B894), size: 20),
+              ]),
+            ),
+          ),
+        ],
+        if (job.isFailed && job.error != null) ...[
+          const SizedBox(height: 8),
+          Text('Error: ${job.error}', style: GoogleFonts.poppins(fontSize: 11, color: Colors.redAccent)),
+        ],
+      ]),
     );
   }
 }

@@ -293,6 +293,104 @@ class StudioImageJob {
   bool get isFailed => status == 'failed';
 }
 
+// ─── Grok Video Config ───────────────────────────────────────────
+class GrokVideoConfig {
+  final String aspectRatio;
+  final String duration; // seconds, 6-30
+  final String resolution; // 480p | 720p
+  final String mode; // normal | fun | spicy
+
+  const GrokVideoConfig({
+    this.aspectRatio = '16:9',
+    this.duration = '10',
+    this.resolution = '480p',
+    this.mode = 'normal',
+  });
+
+  factory GrokVideoConfig.fromJson(Map<String, dynamic> json) {
+    return GrokVideoConfig(
+      aspectRatio: json['aspectRatio']?.toString() ?? '16:9',
+      duration: json['duration']?.toString() ?? '10',
+      resolution: json['resolution']?.toString() ?? '480p',
+      mode: json['mode']?.toString() ?? 'normal',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'aspectRatio': aspectRatio,
+        'duration': duration,
+        'resolution': resolution,
+        'mode': mode,
+      };
+}
+
+// ─── Grok Video Job ───────────────────────────────────────────────
+class GrokVideoJob {
+  final String id;
+  final String status; // pending|generating_frames|frames_ready|processing|completed|failed
+  final GrokVideoConfig? config;
+  final String? startFrameUrl;
+  final String? endFrameUrl;
+  final String? taskId;
+  final String? finalVideoUrl;
+  final String? error;
+  final DateTime createdAt;
+
+  const GrokVideoJob({
+    required this.id,
+    required this.status,
+    this.config,
+    this.startFrameUrl,
+    this.endFrameUrl,
+    this.taskId,
+    this.finalVideoUrl,
+    this.error,
+    required this.createdAt,
+  });
+
+  factory GrokVideoJob.fromJson(Map<String, dynamic> json) {
+    final rawConfig = json['config'];
+    return GrokVideoJob(
+      id: json['id']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'pending',
+      config: rawConfig is Map
+          ? GrokVideoConfig.fromJson(Map<String, dynamic>.from(rawConfig))
+          : null,
+      startFrameUrl: json['startFrameUrl']?.toString() ?? json['start_frame_url']?.toString(),
+      endFrameUrl: json['endFrameUrl']?.toString() ?? json['end_frame_url']?.toString(),
+      taskId: json['taskId']?.toString() ?? json['task_id']?.toString(),
+      finalVideoUrl: json['finalVideoUrl']?.toString() ?? json['final_video_url']?.toString(),
+      error: json['error']?.toString(),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'].toString())
+          : (json['created_at'] != null
+              ? DateTime.parse(json['created_at'].toString())
+              : DateTime.now()),
+    );
+  }
+
+  bool get isPending => status == 'pending';
+  bool get isGeneratingFrames => status == 'generating_frames';
+  bool get isFramesReady => status == 'frames_ready';
+  bool get isProcessing => status == 'processing';
+  bool get isCompleted => status == 'completed';
+  bool get isFailed => status == 'failed';
+  bool get isInProgress =>
+      isPending || isGeneratingFrames || isFramesReady || isProcessing;
+
+  String get statusLabel {
+    switch (status) {
+      case 'pending': return 'Queued';
+      case 'generating_frames': return 'Generating Frames...';
+      case 'frames_ready': return 'Creating Video...';
+      case 'processing': return 'Processing Video...';
+      case 'completed': return 'Completed';
+      case 'failed': return 'Failed';
+      default: return status;
+    }
+  }
+}
+
 // ─── Product Model ────────────────────────────────────────────────
 class ProductModel {
   final String id;
@@ -306,6 +404,7 @@ class ProductModel {
   /// Raw studio image URLs stored directly on the product document
   /// (pushed via /studio/select endpoint as plain strings).
   final List<String> studioImageUrls;
+  final List<GrokVideoJob> grokVideoJobs;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -319,6 +418,7 @@ class ProductModel {
     this.videos = const [],
     this.studioImages = const [],
     this.studioImageUrls = const [],
+    this.grokVideoJobs = const [],
     required this.createdAt,
     required this.updatedAt,
   });
@@ -362,6 +462,14 @@ class ProductModel {
           [],
       studioImages: studioJobs,
       studioImageUrls: studioUrls,
+      grokVideoJobs: (() {
+        final raw = json['grokVideoJobs'] ?? json['grok_video_jobs'];
+        if (raw is! List) return <GrokVideoJob>[];
+        return raw
+            .whereType<Map<String, dynamic>>()
+            .map((e) => GrokVideoJob.fromJson(e))
+            .toList();
+      })(),
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'].toString())
           : (json['created_at'] != null
@@ -386,13 +494,18 @@ class ProductModel {
 
   /// Quick helpers
   bool get hasPosters => posters.isNotEmpty;
-  bool get hasVideos => videos.isNotEmpty;
+  bool get hasVideos => videos.isNotEmpty || grokVideoJobs.isNotEmpty;
+  bool get hasGrokVideos => grokVideoJobs.isNotEmpty;
   /// True if there are AI Studio images — either raw URLs or full job objects.
   bool get hasStudioImages => studioImageUrls.isNotEmpty || studioImages.isNotEmpty;
   PosterJob? get latestPoster => posters.isNotEmpty ? posters.last : null;
   VideoJob? get latestVideo => videos.isNotEmpty ? videos.last : null;
   StudioImageJob? get latestStudioImage =>
       studioImages.isNotEmpty ? studioImages.last : null;
+  GrokVideoJob? get latestGrokVideo =>
+      grokVideoJobs.isNotEmpty ? grokVideoJobs.last : null;
+  bool get hasActiveGrokJob =>
+      grokVideoJobs.any((j) => j.isInProgress);
 
   /// All studio output URLs: raw URL list + any URLs from StudioImageJob outputs.
   List<String> get allStudioImageUrls {
@@ -414,6 +527,7 @@ class ProductModel {
     List<VideoJob>? videos,
     List<StudioImageJob>? studioImages,
     List<String>? studioImageUrls,
+    List<GrokVideoJob>? grokVideoJobs,
     DateTime? updatedAt,
   }) {
     return ProductModel(
@@ -426,6 +540,7 @@ class ProductModel {
       videos: videos ?? this.videos,
       studioImages: studioImages ?? this.studioImages,
       studioImageUrls: studioImageUrls ?? this.studioImageUrls,
+      grokVideoJobs: grokVideoJobs ?? this.grokVideoJobs,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

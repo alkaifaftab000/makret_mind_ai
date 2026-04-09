@@ -822,10 +822,11 @@ class _ProductTile extends StatelessWidget {
     // Determine overall status based on latest generations
     final posterStatus = product.latestPoster?.status ?? 'none';
     final videoStatus = product.latestVideo?.status ?? 'none';
+    final grokStatus = product.latestGrokVideo?.status ?? 'none';
     
-    if (posterStatus == 'failed' || videoStatus == 'failed') return Colors.redAccent;
-    if (posterStatus == 'processing' || videoStatus == 'processing') return const Color(0xFFFDAA5E);
-    if (posterStatus == 'completed' || videoStatus == 'completed') return const Color(0xFF00B894);
+    if (posterStatus == 'failed' || videoStatus == 'failed' || grokStatus == 'failed') return Colors.redAccent;
+    if (posterStatus == 'processing' || videoStatus == 'processing' || grokStatus == 'generating_frames' || grokStatus == 'frames_ready' || grokStatus == 'processing') return const Color(0xFFFDAA5E);
+    if (posterStatus == 'completed' || videoStatus == 'completed' || grokStatus == 'completed') return const Color(0xFF00B894);
     
     return Colors.grey;
   }
@@ -843,6 +844,11 @@ class _ProductTile extends StatelessWidget {
         product.latestPoster?.resultUrl != null &&
         product.latestPoster!.resultUrl!.isNotEmpty) {
       displayImageUrl = product.latestPoster!.resultUrl;
+      isResultImage = true;
+    } else if (productType == 'video' &&
+         product.latestGrokVideo?.startFrameUrl != null && 
+         product.latestGrokVideo!.startFrameUrl!.isNotEmpty) {
+      displayImageUrl = product.latestGrokVideo!.startFrameUrl;
       isResultImage = true;
     } else if (product.images.isNotEmpty && product.images.first.startsWith('http')) {
       displayImageUrl = product.images.first;

@@ -45,7 +45,8 @@ class ProductService {
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
       }
       return [];
-    } catch (e) { print("ERROR PARSING: $e"); 
+    } catch (e) {
+      _logger.e("ERROR FETCHING PRODUCTS: $e"); 
       return [];
     }
   }
@@ -58,7 +59,8 @@ class ProductService {
         return ProductModel.fromJson(response.data);
       }
       return null;
-    } catch (e) { print("ERROR PARSING: $e"); 
+    } catch (e) {
+      _logger.e("ERROR FETCHING PRODUCT: $e"); 
       return null;
     }
   }
@@ -306,6 +308,105 @@ class ProductService {
       rethrow;
     }
   }
+  // ─── Grok Video Jobs ──────────────────────────────────────────────
+
+  /// Create a Grok image-to-video job.
+  /// POST /api/products/{product_id}/grok-videos
+  /// Returns the job ID and both frame task IDs immediately — no polling on backend.
+  Future<Map<String, dynamic>> createGrokVideoJob({
+    required String productId,
+    GrokVideoConfig? config,
+  }) async {
+    try {
+      _logger.i('Creating Grok video job for product: $productId');
+      final body = config != null ? {'config': config.toJson()} : <String, dynamic>{};
+      final response = await _dio.post(
+        '/api/products/$productId/grok-videos',
+        data: body,
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data as Map<String, dynamic>;
+        _logger.i('Grok job created: ${data['jobId']} | '
+            'startTask=${data['startFrameTaskId']} | endTask=${data['endFrameTaskId']}');
+        return data; // {jobId, startFrameTaskId, endFrameTaskId, status}
+      }
+      throw Exception('Failed to create Grok video job: ${response.statusCode}');
+    } catch (e) {
+      _logger.e('Error creating Grok video job: $e');
+      if (e is DioException) _logger.e('Response: ${e.response?.data}');
+      rethrow;
+    }
+  }
+
+  /// Submit frames to Grok image-to-video — called after frontend confirms frames are ready.
+  /// POST /api/products/{product_id}/grok-videos/{job_id}/submit-video
+  /// Returns {taskId, status}.
+  Future<Map<String, dynamic>> submitGrokVideo({
+    required String productId,
+    required String jobId,
+    required String startFrameUrl,
+    required String endFrameUrl,
+  }) async {
+    try {
+      _logger.i('Submitting Grok video for job $jobId');
+      final response = await _dio.post(
+        '/api/products/$productId/grok-videos/$jobId/submit-video',
+        data: {
+          'start_frame_url': startFrameUrl,
+          'end_frame_url': endFrameUrl,
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data as Map<String, dynamic>;
+        _logger.i('Grok video submitted — taskId=${data['taskId']}');
+        return data; // {taskId, status}
+      }
+      throw Exception('Failed to submit Grok video: ${response.statusCode}');
+    } catch (e) {
+      _logger.e('Error submitting Grok video: $e');
+      if (e is DioException) _logger.e('Response: ${e.response?.data}');
+      rethrow;
+    }
+  }
+
+  /// Poll status of a Grok video job (reads from backend DB).
+  /// GET /api/products/{product_id}/grok-videos/{job_id}/status
+  Future<GrokVideoJob> getGrokVideoJobStatus({
+    required String productId,
+    required String jobId,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/api/products/$productId/grok-videos/$jobId/status',
+      );
+      if (response.statusCode == 200) {
+        return GrokVideoJob.fromJson(response.data as Map<String, dynamic>);
+      }
+      throw Exception('Failed to get Grok job status: ${response.statusCode}');
+    } catch (e) {
+      _logger.e('Error polling Grok job status: $e');
+      rethrow;
+    }
+  }
+
+  /// Persist the final video URL after frontend confirms completion from KIE.
+  /// POST /api/products/{product_id}/grok-videos/{job_id}/complete
+  Future<void> completeGrokVideoJob({
+    required String productId,
+    required String jobId,
+    required String videoUrl,
+  }) async {
+    try {
+      await _dio.post(
+        '/api/products/$productId/grok-videos/$jobId/complete',
+        data: {'video_url': videoUrl},
+      );
+    } catch (e) {
+      _logger.e('Error completing Grok job: $e');
+      rethrow;
+    }
+  }
 }
 
 final productService = ProductService();
+
