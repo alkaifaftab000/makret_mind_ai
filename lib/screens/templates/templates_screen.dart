@@ -9,6 +9,7 @@ import 'package:market_mind/utils/search_bar.dart';
 import 'package:video_player/video_player.dart';
 import 'package:market_mind/models/product_model.dart';
 import 'package:market_mind/screens/product/video_detail_screen.dart';
+import 'package:market_mind/screens/templates/template_image_detail_screen.dart';
 
 class TemplatesScreen extends StatefulWidget {
   const TemplatesScreen({super.key});
@@ -27,6 +28,29 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
     'E-Commerce',
     'Professional',
     'Minimalist',
+  ];
+
+  final List<String> _aiStudioTemplates = [
+    'assets/video/template_aistudio/1.png',
+    'assets/video/template_aistudio/2.jpeg',
+    'assets/video/template_aistudio/3.png',
+    'assets/video/template_aistudio/4.png',
+    'assets/video/template_aistudio/5.png',
+    'assets/video/template_aistudio/6.png',
+    'assets/video/template_aistudio/7.png',
+    'assets/video/template_aistudio/8.png',
+    'assets/video/template_aistudio/9.png',
+    'assets/video/template_aistudio/10.jpeg',
+    'assets/video/template_aistudio/11.jpeg',
+    'assets/video/template_aistudio/12.jpeg',
+    'assets/video/template_aistudio/13.jpeg',
+    'assets/video/template_aistudio/14.jpeg',
+  ];
+
+  final List<String> _posterTemplates = [
+    'assets/video/template_poster/1.png',
+    'assets/video/template_poster/2.png',
+    'assets/video/template_poster/3.png',
   ];
 
   final List<_Template> _templates = [
@@ -284,36 +308,121 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Grid of Templates
+          // Content Area
           Expanded(
-            child: _filtered.isEmpty
-                ? Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 30),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Title: Video Templates
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
                     child: Text(
-                      AppStrings.noTemplatesFound,
+                      'Video Templates',
                       style: GoogleFonts.poppins(
-                        color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                       ),
                     ),
-                  )
-                : Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                    child: GridView.builder(
-                      itemCount: _filtered.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 0.85,
+                  ),
+
+                  // ── Horizontal Video Templates
+                  SizedBox(
+                    height: 240,
+                    child: _filtered.isEmpty
+                        ? Center(
+                            child: Text(
+                              AppStrings.noTemplatesFound,
+                              style: GoogleFonts.poppins(
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _filtered.length,
+                            separatorBuilder: (_, __) => const SizedBox(width: 14),
+                            itemBuilder: (_, index) {
+                              final template = _filtered[index];
+                              return SizedBox(
+                                width: 160,
+                                child: _buildTemplateCard(isDark, template),
+                              );
+                            },
                           ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // ── Title: AI Studio Templates
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Text(
+                      'AI Studio Templates',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                      ),
+                    ),
+                  ),
+
+                  // ── Horizontal AI Studio Images
+                  SizedBox(
+                    height: 220,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _aiStudioTemplates.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 14),
                       itemBuilder: (_, index) {
-                        final template = _filtered[index];
-                        return _buildTemplateCard(isDark, template);
+                        return SizedBox(
+                          width: 160,
+                          child: _buildImageCard(isDark, _aiStudioTemplates[index], 'AI Studio Template'),
+                        );
                       },
                     ),
                   ),
+
+                  const SizedBox(height: 32),
+
+                  // ── Title: Poster Templates
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Text(
+                      'Poster Templates',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                      ),
+                    ),
+                  ),
+
+                  // ── Horizontal Poster Images
+                  SizedBox(
+                    height: 240, // Slightly taller since posters are often vertically dominant
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _posterTemplates.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 14),
+                      itemBuilder: (_, index) {
+                        return SizedBox(
+                          width: 170,
+                          child: _buildImageCard(isDark, _posterTemplates[index], 'Poster Template'),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -395,6 +504,48 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageCard(bool isDark, String imagePath, String templateCategory) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TemplateImageDetailScreen(
+              imagePath: imagePath,
+              templateCategory: templateCategory,
+              title: templateCategory.contains('AI') ? 'AI Studio Design' : 'Marketing Poster',
+            ),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Image.asset(
+            imagePath,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              color: isDark ? AppColors.darkCard : AppColors.lightCard,
+              child: Center(
+                child: Icon(Icons.image_not_supported_rounded, color: AppColors.textMutedDark),
+              ),
+            ),
+          ),
         ),
       ),
     );
